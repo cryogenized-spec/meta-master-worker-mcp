@@ -10,7 +10,7 @@
 2. **Authorisation:** two separately enforced trust relationships: MCP client -> Worker, and Worker -> Meta. Validate MCP caller, session, account and target resource on every operation. Separate read and write capabilities.
 3. **Meta connection:** OAuth `state` with short expiry and single use, redirect URI validation, least-privilege scopes; encrypt token data at rest, support revocation and expiration.
 4. **Module registry:** Facebook Pages, Instagram, Threads, Messenger, WhatsApp Business and Ads are independently enabled by configuration and granted scopes.
-5. **Storage:** evaluate Cloudflare D1 for encrypted connection metadata and audit records, KV for noncritical cache and R2 for temporary media staging. D1 (not eventually consistent KV) is the authoritative store for single-use OAuth state, replay protection and approvals. No bindings are provisioned in M0.
+5. **Storage:** evaluate Cloudflare D1 for encrypted connection metadata and audit records, KV for noncritical cache and R2 for temporary media staging. The official OAuth provider manages its own OAuth codes and token state using its supported KV implementation; D1 is authoritative for our own transactionally consumed publishing approvals and application-specific replay protection. No bindings are provisioned in M0.
 6. **API client:** narrowly allowlisted Meta Graph API operations, rate-limit awareness, bounded retries and structured redacted errors.
 7. **Approval engine:** bind each pending write to an authenticated actor, target, action, content digest and expiration; prevent duplicate execution.
 8. **CLI:** share API services with MCP; never bypass server-side permissions.
