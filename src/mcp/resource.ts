@@ -1,57 +1,13 @@
 import {
   OAuthResourceServer,
   insufficientScope,
-  type AuthorizationServerBinding,
 } from "@cloudflare/workers-oauth-provider";
 import { mcpHandler } from "./server";
-
-export type AuthProps = { userId: string };
-
-export interface ResourceEnv {
-  /** Private Cloudflare Service Binding to the separately deployed auth worker. */
-  AUTH_SERVER?: AuthorizationServerBinding<AuthProps>;
-  /** Canonical URL of this exact /mcp resource, used as OAuth audience. */
-  MCP_SERVER_URL?: string;
-  /** Canonical OAuth issuer URL of the auth worker. */
-  AUTH_SERVER_URL?: string;
-}
-
-export function isMcpResourcePath(path: string): boolean {
-  return path === "/mcp" ||
-    path === "/.well-known/oauth-protected-resource" ||
-    path === "/.well-known/oauth-protected-resource/mcp";
-}
-
-function publicUrl(raw: string, resource: boolean): boolean {
-  try {
-    const url = new URL(raw);
-    const loopback = url.hostname === "localhost" ||
-      url.hostname === "127.0.0.1" ||
-      url.hostname === "[::1]";
-    return (url.protocol === "https:" || (url.protocol === "http:" && loopback)) &&
-      url.username === "" && url.password === "" &&
-      url.search === "" && url.hash === "" &&
-      (!resource || url.pathname === "/mcp");
-  } catch {
-    return false;
-  }
-}
-
-export function isResourceConfigured(
-  env: ResourceEnv,
-): env is ResourceEnv & {
-  AUTH_SERVER: AuthorizationServerBinding<AuthProps>;
-  MCP_SERVER_URL: string;
-  AUTH_SERVER_URL: string;
-} {
-  return (
-    typeof env.AUTH_SERVER?.validateToken === "function" &&
-    typeof env.MCP_SERVER_URL === "string" &&
-    typeof env.AUTH_SERVER_URL === "string" &&
-    publicUrl(env.MCP_SERVER_URL, true) &&
-    publicUrl(env.AUTH_SERVER_URL, false)
-  );
-}
+import {
+  isResourceConfigured,
+  type AuthProps,
+  type ResourceEnv,
+} from "./config";
 
 function unavailable(): Response {
   return new Response(JSON.stringify({
@@ -67,9 +23,9 @@ function unavailable(): Response {
 }
 
 /**
- * The official OAuth provider owns token audience validation, challenge headers,
- * and OAuth protected-resource metadata. requiredScopes only advertises
- * scopes: we check ctx.auth.scope explicitly before invoking MCP.
+ * The OAuth Provider validates bearer token audience, issues WWW-Authenticate
+ * challenges, and publishes protected resource metadata. It does NOT enforce
+ * advertised requiredScopes: we check scope before invoking any MCP tool.
  */
 export async function handleMcpResource(
   request: Request,
@@ -86,11 +42,11 @@ export async function handleMcpResource(
     requiredScopes: ["mcp:read"],
     validateToken: (bindings) => bindings.AUTH_SERVER!.validateToken,
     handler: {
-      fetch(request, env, authContext) {
+      fetch(req, bindings, authContext) {
         if (!authContext.auth.scope.includes("mcp:read")) {
           return insufficientScope(authContext.auth, ["mcp:read"]);
         }
-        return mcpHandler(request, env, authContext);
+        return mcpHandler(req, bindings, authContext);
       },
     },
   });
