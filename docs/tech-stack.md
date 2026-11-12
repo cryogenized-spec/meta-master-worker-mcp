@@ -8,24 +8,24 @@
 |---|---|---|---|
 | Backend | TypeScript ES modules on Cloudflare Workers | Implemented skeleton | `src/index.ts`, `wrangler.jsonc` |
 | Toolchain | Node.js >=24, npm | Configured | `package.json` and CI workflow |
-| Language | TypeScript ^5.9.3 | Configured; not locked | `package.json`, `tsconfig.json` |
+| Language | TypeScript ^5.9.3 | Configured; locked by package-lock.json | `package.json`, `tsconfig.json` |
 | Cloudflare CLI | Wrangler ^4.0.0 | Configured; not deployed | `package.json`, `wrangler.jsonc` |
-| Tests | Vitest ^4.0.0 | Test source present; CI pass not confirmed | `tests/worker.test.ts` |
-| CI | GitHub Actions, Node 24 | Workflow committed; results to verify | `.github/workflows/ci.yml` |
+| Tests | Vitest ^4.0.0 | Test suite passed on GitHub Node 24 | `tests/worker.test.ts` |
+| CI | GitHub Actions, Node 24 | Node 24 verified; main CI uses npm ci | `.github/workflows/ci.yml` |
 | Protocol | HTTP `/health`; `/mcp` always 503 | Implemented | `src/index.ts` |
 
-There is **no lockfile yet**. Neither MCP transport nor Meta API integration, OAuth, D1, KV, R2, UI, encryption, deployed endpoints or real platform tools exist.
+A committed npm lockfile enables reproducible \`npm ci\` installs. See [M0 GitHub-hosted verification](m0-verification.md). Neither MCP transport nor Meta API integration, OAuth, D1, KV, R2, UI, encryption, deployed endpoints or real platform tools exist.
 
 ## Selected for upcoming milestones
 
 - **MCP protocol:** official TypeScript MCP SDK plus Cloudflare-compatible Streamable HTTP adapter. Verify SDK version, Workers runtime compatibility and current MCP protocol at implementation; do not hand-roll the protocol.
-- **MCP client authorization:** Cloudflare Workers OAuth Provider or an equally auditable, standards-aligned Worker implementation. Separate authorization of a ChatGPT/Claude client from authorization to use a Meta account.
+- **MCP client authorization:** Cloudflare Workers OAuth Provider v1 split authorization/resource-server architecture. Separate authorization of a ChatGPT/Claude client from authorization to use a Meta account.
 - **Meta integration:** version-pinned Meta Graph API over native `fetch`, with granular permission checks. Account eligibility, endpoint permissions and API deprecations must be validated against current primary documentation.
 - **Database:** Cloudflare D1 for durable connection metadata, encrypted token payloads, pending approvals and audit events.
 - **Cryptography:** Workers Web Crypto. Encryption keys remain Cloudflare secrets, never D1, KV or GitHub.
 - **Validation:** Zod or similarly well-maintained schema validation for tool inputs and API responses (not yet selected or installed).
 - **Media:** Cloudflare R2 for bounded temporary uploads only when publishing workflows need it.
-- **Cache:** Cloudflare KV for noncritical cache/config only. **Do not use eventually consistent KV as the sole authoritative store for one-time OAuth state, replay prevention, or single-use approvals.** Use transactional D1 for these.
+- **Cache:** Cloudflare KV for noncritical cache/config only. **The official Workers OAuth Provider manages OAuth internals in its supported KV storage.** Do not invent separate OAuth state logic; use transactional D1 for our custom one-time approvals and application replay protection.
 - **Local tests:** Vitest unit tests, mocked Meta API contract tests and Worker integration tests. Live permission tests occur only against assets controlled by the operator.
 - **CLI:** a Node.js TypeScript entry point sharing the same service layer and security decisions as the MCP transport.
 
