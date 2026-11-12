@@ -47,7 +47,9 @@ Completion checklist:
 - [x] Add a no-credentials environment template; M1 will document the future secret binding names.
 - [x] Verify all supported methods on `/mcp` return 503, even with fabricated bearer tokens or approval headers; OAuth routes return 404.
 
-**Exit gate:** CI confirmed green from GitHub, reproducible install, documented auth design and no active unauthenticated tools. **No deployment required.**\n\n**Next-stage gate:** Implement and version-test the actual MCP/OAuth SDK integration in M1 before enabling `/mcp`; documenting the decision in M0 is not a compatibility test.
+**Exit gate:** CI confirmed green from GitHub, reproducible install, documented auth design and no active unauthenticated tools. **No deployment required.**
+
+**Next-stage gate:** Implement and version-test the actual MCP/OAuth SDK integration in M1 before enabling `/mcp`; documenting the decision in M0 is not a compatibility test.
 
 ## M1 — Authentication, account connection and MCP protocol
 
