@@ -1,0 +1,3 @@
+# M0 uses no secrets or Meta credentials.
+# Do not add real values here. Local dev secrets go into ignored .dev.vars.
+# Meta and OAuth secret *names* will be documented during M1.
