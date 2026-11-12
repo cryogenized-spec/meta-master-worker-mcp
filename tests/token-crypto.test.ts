@@ -42,7 +42,7 @@ describe("encrypted Meta token vault", () => {
     await expect(decryptMetaToken("v1.bad", key, owner)).rejects.toThrow("invalid_token_envelope");
     const encrypted = await encryptMetaToken("dummy", key, owner);
     const pieces = encrypted.split(".");
-    pieces[2] = pieces[2].slice(0, -1) + (pieces[2].endsWith("a") ? "b" : "a");
+    pieces[2] = (pieces[2].startsWith("A") ? "B" : "A") + pieces[2].slice(1);
     await expect(decryptMetaToken(pieces.join("."), key, owner))
       .rejects.toThrow("token_decryption_failed");
   });
