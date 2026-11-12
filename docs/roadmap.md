@@ -29,7 +29,7 @@ flowchart LR
 
 ## M0 — Foundation and engineering baseline
 
-**State: in progress.** No Meta integration exists yet. **Priority: P0.**
+**State: completed for foundation baseline.** No Meta integration exists yet. **Priority: P0.**
 
 Already committed:
 - [x] Public repository, base README and agent guidance.
@@ -40,7 +40,7 @@ Already committed:
 
 Outstanding:
 - [x] Produce and commit a reproducible npm lockfile; change CI to `npm ci`.
-- [ ] Verify Node 24 CI: typecheck, unit tests and Worker dry-run all pass. A one-time CI evidence run is in progress; do not claim success until its result is recorded.
+- [x] Verify Node 24 CI: locked install, TypeScript, Vitest and Worker dry-run succeeded ([run 43281910212](https://github.com/cryogenized-spec/meta-master-worker-mcp/actions/runs/43281910212); [record](m0-verification.md)).
 - [x] Define an explicit threat model covering credential exposure, OAuth CSRF, cross-account access, replay, forged approvals, SSRF and logging. See [threat model](threat-model.md).
 - [x] Choose the Cloudflare Workers OAuth Provider v1 split architecture and official MCP TypeScript SDK for M1. See [authentication decision](auth-design.md).
 - [x] Keep errors constant and add allowlisted event shapes plus tests that sensitive error causes cannot be reflected.
