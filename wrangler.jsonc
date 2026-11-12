@@ -1,0 +1,7 @@
+{
+  // Public repository: deployment is a separate, explicit step.
+  "name": "meta-master-worker-mcp",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-11-12",
+  "workers_dev": false
+}
