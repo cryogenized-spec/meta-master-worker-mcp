@@ -1,11 +1,11 @@
 # Agent development rules
 
-This repository is public and is currently in M0.
+This repository is public and has completed M0; M1 (authentication and MCP transport) is next.
 
 ## Work style
 
 - Make small, reviewable changes and include test results.
-- Read `docs/architecture.md`, `docs/security.md` and the milestone definition before new features.
+- Read `docs/architecture.md`, `docs/auth-design.md`, `docs/threat-model.md`, `docs/security.md` and the milestone definition before new features.
 - Preserve the explicit draft -> review -> approve -> execute workflow for every external write.
 - Do not claim an operation is implemented without a corresponding live API integration test.
 - Never deploy to Cloudflare or change Meta app settings without explicit authorisation.
@@ -24,7 +24,7 @@ This repository is public and is currently in M0.
 
 ## Verification
 
-- Run `npm run check` and `npm run build`.
+- Run `npm ci`, `npm run check` and `npm run build`.
 - Tests must fail closed when credentials, scopes or approvals are missing.
 - Preserve `/mcp` returning 503 until MCP authentication and authorisation are implemented.
 - Prefer minimal dependencies; review licences before importing competitor code.
