@@ -35,11 +35,18 @@ function decode(value: string): Uint8Array {
   }
 }
 
+/** Copy into an actual ArrayBuffer for Workers Web Crypto BufferSource typing. */
+function asBuffer(bytes: Uint8Array): ArrayBuffer {
+  const buffer = new ArrayBuffer(bytes.byteLength);
+  new Uint8Array(buffer).set(bytes);
+  return buffer;
+}
+
 async function importKey(secret: string): Promise<CryptoKey> {
   if (!secret) throw new Error("missing_encryption_key");
   const bytes = decode(secret);
   if (bytes.length !== 32) throw new Error("invalid_encryption_key");
-  return crypto.subtle.importKey("raw", bytes, "AES-GCM", false, ["encrypt", "decrypt"]);
+  return crypto.subtle.importKey("raw", asBuffer(bytes), "AES-GCM", false, ["encrypt", "decrypt"]);
 }
 
 export async function encryptMetaToken(
@@ -52,9 +59,9 @@ export async function encryptMetaToken(
   const iv = crypto.getRandomValues(new Uint8Array(12));
   const data = new TextEncoder().encode(plaintext);
   const ciphertext = await crypto.subtle.encrypt(
-    { name: "AES-GCM", iv, additionalData: contextAAD(context) },
+    { name: "AES-GCM", iv: asBuffer(iv), additionalData: asBuffer(contextAAD(context)) },
     key,
-    data,
+    asBuffer(data),
   );
   return ["v1", encode(iv), encode(new Uint8Array(ciphertext))].join(".");
 }
@@ -73,9 +80,9 @@ export async function decryptMetaToken(
     if (iv.length !== 12) throw new Error("invalid_iv");
     const data = decode(cipher64);
     const plaintext = await crypto.subtle.decrypt(
-      { name: "AES-GCM", iv, additionalData: contextAAD(context) },
+      { name: "AES-GCM", iv: asBuffer(iv), additionalData: asBuffer(contextAAD(context)) },
       key,
-      data,
+      asBuffer(data),
     );
     return new TextDecoder("utf-8", { fatal: true }).decode(plaintext);
   } catch {
