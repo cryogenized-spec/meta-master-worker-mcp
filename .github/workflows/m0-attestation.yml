@@ -1,0 +1,55 @@
+name: One-time M0 validation attestation
+
+# Temporary, main-only verification. Runs once when this file is first committed.
+# Successful Node 24 checks create docs/m0-verification.md; remove this workflow afterward.
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/m0-attestation.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Typecheck and tests
+        run: npm run check
+      - name: Cloudflare Worker dry-run bundle (NO DEPLOYMENT)
+        run: npm run build
+      - name: Verify repository cleanliness
+        run: |
+          git diff --exit-code -- package-lock.json
+          test ! -e .dev.vars
+          test ! -e .env
+          test -f docs/threat-model.md
+          test -f docs/auth-design.md
+      - name: Record successful run (temporary workflow only)
+        run: |
+          printf '%s\n' \
+            '# M0 validation evidence' \
+            '' \
+            'The following checks completed on the trusted GitHub-hosted Ubuntu runner with Node.js 24:' \
+            '- npm ci --no-audit --no-fund' \
+            '- npm run check (TypeScript and Vitest)' \
+            '- npm run build (Wrangler dry run; no deployment)' \
+            '- lockfile unchanged and no local secret file present' \
+            '' \
+            "Source commit: \`$GITHUB_SHA\`" \
+            "Workflow run: https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
+            '' \
+            'This validates the committed M0 shell, not a functioning Meta OAuth integration or a production deployment.' \
+            > docs/m0-verification.md
+          git add docs/m0-verification.md
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'test(m0): record successful Node 24 CI verification'
+          git push origin HEAD:main
