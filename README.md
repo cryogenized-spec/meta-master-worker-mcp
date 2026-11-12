@@ -2,7 +2,7 @@
 
 A modular, Cloudflare-native Model Context Protocol server for authorised Meta business and social-platform workflows.
 
-> **Status: M0 foundation (pre-alpha).** No Meta account connection, OAuth flow, publishing, messaging or advertising features are implemented. The `/mcp` endpoint is deliberately unavailable until authentication and authorisation controls have been implemented and tested.
+> **Status: M0 foundation complete (pre-alpha); M1 not started.** No Meta account connection, OAuth flow, publishing, messaging or advertising features are implemented. The `/mcp` endpoint is deliberately unavailable until authentication and authorisation controls have been implemented and tested.
 
 ## Goals
 
@@ -27,7 +27,7 @@ Local endpoints: `GET /health` returns M0 status; `/mcp` returns HTTP 503 until 
 
 ## Roadmap and decisions
 
-- [Milestone roadmap and dependency chart](docs/roadmap.md)
+- [Milestone roadmap and dependency chart](docs/roadmap.md)\n- [M0 successful GitHub-hosted validation](docs/m0-verification.md)\n- [MCP/Meta OAuth design](docs/auth-design.md)\n- [Threat model](docs/threat-model.md)
 - [Verified and planned technology stack](docs/tech-stack.md)
 - [Architecture](docs/architecture.md)
 - [Security rules](docs/security.md)
