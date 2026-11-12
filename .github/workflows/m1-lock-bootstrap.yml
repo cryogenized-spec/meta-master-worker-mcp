@@ -19,11 +19,20 @@ jobs:
         with:
           node-version: '24'
       - name: Generate lockfile without running install scripts
+        id: lock
+        continue-on-error: true
         run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
-      - name: Commit verified lockfile
+      - name: Record outcome
+        if: always()
         run: |
-          git add package-lock.json
-          if ! git diff --cached --quiet; then
-            git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'build(m1): lock MCP v2 and OAuth dependencies'
-            git push origin HEAD:feat/m1-secure-resource
+          mkdir -p docs
+          printf '%s\n'             '# M1 dependency bootstrapping'             ''             "Result: ${{ steps.lock.outcome }}"             "Run: https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"             ''             'Temporary workflow: remove after lockfile validation.'             > docs/m1-bootstrap-status.md
+          git add docs/m1-bootstrap-status.md
+          if [ "${{ steps.lock.outcome }}" = "success" ]; then
+            git add package-lock.json
           fi
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'build(m1): record dependency resolution status'
+          git push origin HEAD:feat/m1-secure-resource
+      - name: Fail if resolution failed
+        if: steps.lock.outcome != 'success'
+        run: exit 1
