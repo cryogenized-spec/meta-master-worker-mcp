@@ -34,11 +34,11 @@ flowchart LR
 Already committed:
 - [x] Public repository, base README and agent guidance.
 - [x] TypeScript Cloudflare Worker skeleton; health route; `/mcp` deliberately returns 503.
-- [x] Wrangler config, Vitest test source, CI workflow (execution status not yet verified).
+- [x] Wrangler config, Vitest test source, CI workflow with verified successful Node 24 run.
 - [x] Initial security rules and architecture documentation.
 - [x] Roadmap and technology-selection record.
 
-Outstanding:
+Completion checklist:
 - [x] Produce and commit a reproducible npm lockfile; change CI to `npm ci`.
 - [x] Verify Node 24 CI: locked install, TypeScript, Vitest and Worker dry-run succeeded ([run 43281910212](https://github.com/cryogenized-spec/meta-master-worker-mcp/actions/runs/43281910212); [record](m0-verification.md)).
 - [x] Define an explicit threat model covering credential exposure, OAuth CSRF, cross-account access, replay, forged approvals, SSRF and logging. See [threat model](threat-model.md).
