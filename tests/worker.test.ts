@@ -5,13 +5,13 @@ const request = (path: string, method = "GET") =>
   worker.fetch(new Request(`https://example.test${path}`, { method }), {});
 
 describe("M0 Worker safety boundary", () => {
-  it("reports M0 status without claiming Meta connectivity", async () => {
+  it("reports staged M1 status without claiming Meta connectivity", async () => {
     const response = await request("/health");
     expect(response.status).toBe(200);
     expect(response.headers.get("cache-control")).toBe("no-store");
     expect(await response.json()).toMatchObject({
       status: "ok",
-      phase: "M0",
+      phase: "M1",
       meta_connected: false,
       mcp_enabled: false,
     });
