@@ -53,9 +53,10 @@ Completion checklist:
 
 ## M1 — Authentication, account connection and MCP protocol
 
-**State: planned. Priority: P0. Depends on M0.**
+**State: in progress — M1.1 transport scaffold validated, OAuth authorization Worker and Meta onboarding outstanding. Priority: P0. Depends on M0.**
 
-- [ ] Implement Streamable HTTP MCP transport with explicit client authentication and per-tool authorization.
+- [x] Implement and bundle stateless SDK v2 Streamable HTTP MCP resource handler behind Cloudflare OAuthResourceServer; verify fail-closed configuration and scope enforcement in code. [CI](m1-validation.md).
+- [ ] Verify actual client authentication, scope checks and transport interoperability against a real authorization Worker and test clients.
 - [ ] Implement Meta OAuth onboarding for operator-controlled assets with CSRF-safe single-use state and exact redirect URI binding.
 - [ ] Use encrypted D1-backed token storage, expiry tracking, revocation/disconnect and key-rotation procedure.
 - [ ] Build Meta Graph API client with pinned API version, allowlisted requests, safe retries, rate-limit/backoff behaviour and redacted errors.
