@@ -18,7 +18,7 @@ A modular, Cloudflare-native Model Context Protocol server for authorised Meta b
 Requires Node.js 24+ and npm.
 
 ```sh
-npm install
+npm ci
 npm run check
 npm run dev
 ```
@@ -27,7 +27,10 @@ Local endpoints: `GET /health` returns M0 status; `/mcp` returns HTTP 503 until 
 
 ## Roadmap and decisions
 
-- [Milestone roadmap and dependency chart](docs/roadmap.md)\n- [M0 successful GitHub-hosted validation](docs/m0-verification.md)\n- [MCP/Meta OAuth design](docs/auth-design.md)\n- [Threat model](docs/threat-model.md)
+- [Milestone roadmap and dependency chart](docs/roadmap.md)
+- [M0 successful GitHub-hosted validation](docs/m0-verification.md)
+- [MCP/Meta OAuth design](docs/auth-design.md)
+- [Threat model](docs/threat-model.md)
 - [Verified and planned technology stack](docs/tech-stack.md)
 - [Architecture](docs/architecture.md)
 - [Security rules](docs/security.md)
