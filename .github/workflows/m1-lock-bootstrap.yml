@@ -1,6 +1,6 @@
 name: Temporary M1 dependency lock bootstrap
 
-# Temporary branch-scoped workflow, removed after successful lock generation.
+# Temporary branch-scoped workflow. Retrying with official compatible SDK peer versions.
 on:
   push:
     branches: [feat/m1-secure-resource]
