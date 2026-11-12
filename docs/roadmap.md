@@ -39,15 +39,15 @@ Already committed:
 - [x] Roadmap and technology-selection record.
 
 Outstanding:
-- [ ] Produce and commit a reproducible npm lockfile; change CI to `npm ci`.
-- [ ] Verify Node 24 CI: typecheck, unit tests and Worker dry-run all pass. Pin workflow actions by immutable SHA if policy requires.
-- [ ] Define an explicit threat model covering credential exposure, OAuth CSRF, cross-account access, replay, forged approvals, SSRF and logging.
-- [ ] Decide exact MCP SDK/Worker OAuth package versions by a small compatibility proof-of-concept.
-- [ ] Introduce consistent error responses, safe structured logging and redaction tests.
-- [ ] Add an environment template documenting secret **names only**, and never credential values.
-- [ ] Validate unauthenticated/incorrect-method requests cannot reach a functioning MCP tool.
+- [x] Produce and commit a reproducible npm lockfile; change CI to `npm ci`.
+- [ ] Verify Node 24 CI: typecheck, unit tests and Worker dry-run all pass. A one-time CI evidence run is in progress; do not claim success until its result is recorded.
+- [x] Define an explicit threat model covering credential exposure, OAuth CSRF, cross-account access, replay, forged approvals, SSRF and logging. See [threat model](threat-model.md).
+- [x] Choose the Cloudflare Workers OAuth Provider v1 split architecture and official MCP TypeScript SDK for M1. See [authentication decision](auth-design.md).
+- [x] Keep errors constant and add allowlisted event shapes plus tests that sensitive error causes cannot be reflected.
+- [x] Add a no-credentials environment template; M1 will document the future secret binding names.
+- [x] Verify all supported methods on `/mcp` return 503, even with fabricated bearer tokens or approval headers; OAuth routes return 404.
 
-**Exit gate:** CI confirmed green from GitHub, reproducible install, reviewed auth design and no active unauthenticated tools. **No deployment required.**
+**Exit gate:** CI confirmed green from GitHub, reproducible install, documented auth design and no active unauthenticated tools. **No deployment required.**\n\n**Next-stage gate:** Implement and version-test the actual MCP/OAuth SDK integration in M1 before enabling `/mcp`; documenting the decision in M0 is not a compatibility test.
 
 ## M1 — Authentication, account connection and MCP protocol
 
