@@ -18,6 +18,7 @@
   },
   "include": [
     "src/**/*.ts",
+    "apps/auth/src/**/*.ts",
     "tests/**/*.ts"
   ]
 }
