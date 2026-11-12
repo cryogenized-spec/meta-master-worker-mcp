@@ -27,7 +27,8 @@ Local endpoints: `GET /health` returns M0 status; `/mcp` returns HTTP 503 until 
 
 ## Roadmap and decisions
 
-- [Roadmap](docs/roadmap.md)
+- [Milestone roadmap and dependency chart](docs/roadmap.md)
+- [Verified and planned technology stack](docs/tech-stack.md)
 - [Architecture](docs/architecture.md)
 - [Security rules](docs/security.md)
 - [Competitor references](docs/competitors.md)
