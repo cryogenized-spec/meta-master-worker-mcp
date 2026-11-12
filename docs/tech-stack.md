@@ -14,7 +14,7 @@
 | CI | GitHub Actions, Node 24 | Node 24 verified; main CI uses npm ci | `.github/workflows/ci.yml` |
 | Protocol | HTTP `/health`; `/mcp` always 503 | Implemented | `src/index.ts` |
 
-A committed npm lockfile enables reproducible \`npm ci\` installs. See [M0 GitHub-hosted verification](m0-verification.md). Neither MCP transport nor Meta API integration, OAuth, D1, KV, R2, UI, encryption, deployed endpoints or real platform tools exist.
+A committed npm lockfile enables reproducible `npm ci` installs. See [M0 GitHub-hosted verification](m0-verification.md). Neither MCP transport nor Meta API integration, OAuth, D1, KV, R2, UI, encryption, deployed endpoints or real platform tools exist.
 
 ## Selected for upcoming milestones
 
