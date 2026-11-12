@@ -1,4 +1,4 @@
-import { handleMcpResource, isMcpResourcePath, isResourceConfigured, type ResourceEnv } from "./mcp/resource";
+import { isMcpResourcePath, isResourceConfigured, type ResourceEnv } from "./mcp/config";
 
 /**
  * M1 resource worker: the MCP SDK is reachable only when the independent
@@ -53,7 +53,10 @@ export default {
   async fetch(request: Request, env: Env, ctx?: ExecutionContext): Promise<Response> {
     const path = new URL(request.url).pathname;
     if (isMcpResourcePath(path)) {
-      if (isResourceConfigured(env)) return handleMcpResource(request, env, ctx);
+      if (isResourceConfigured(env)) {
+        const { handleMcpResource } = await import("./mcp/resource");
+        return handleMcpResource(request, env, ctx);
+      }
       if (path !== "/mcp") return json({ error: "not_found" }, 404);
     }
     return handleRequest(request);
