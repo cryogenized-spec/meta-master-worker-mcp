@@ -1,10 +1,10 @@
+import { isMcpResourcePath, isResourceConfigured, type ResourceEnv } from "./mcp/config";
+
 /**
- * M0 worker shell. There are no Meta API operations or MCP tools yet.
- * /mcp stays unavailable until client authentication and authorisation exist.
+ * M1 resource worker: the MCP SDK is reachable only when the independent
+ * OAuth authorization service binding and canonical URLs are configured.
  */
-export interface Env {
-  // Future secrets are server-side Cloudflare bindings, never public vars.
-}
+export interface Env extends ResourceEnv {}
 
 const headers = {
   "content-type": "application/json; charset=utf-8",
@@ -33,7 +33,7 @@ export function handleRequest(request: Request): Response {
     return json({
       service: "meta-master-worker-mcp",
       status: "ok",
-      phase: "M0",
+      phase: "M1",
       meta_connected: false,
       mcp_enabled: false,
     });
@@ -50,7 +50,15 @@ export function handleRequest(request: Request): Response {
 }
 
 export default {
-  async fetch(request: Request, _env: Env): Promise<Response> {
+  async fetch(request: Request, env: Env, ctx?: ExecutionContext): Promise<Response> {
+    const path = new URL(request.url).pathname;
+    if (isMcpResourcePath(path)) {
+      if (isResourceConfigured(env)) {
+        const { handleMcpResource } = await import("./mcp/resource");
+        return handleMcpResource(request, env, ctx);
+      }
+      if (path !== "/mcp") return json({ error: "not_found" }, 404);
+    }
     return handleRequest(request);
   },
 };

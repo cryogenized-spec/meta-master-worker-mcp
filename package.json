@@ -1,6 +1,6 @@
 {
   "name": "meta-master-worker-mcp",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
   "description": "Self-hostable Cloudflare-native Meta MCP foundation",
@@ -18,6 +18,13 @@
   "devDependencies": {
     "typescript": "^5.9.3",
     "vitest": "^4.0.0",
-    "wrangler": "^4.0.0"
+    "wrangler": "^4.0.0",
+    "@cloudflare/workers-types": "5.20261110.1"
+  },
+  "dependencies": {
+    "@cloudflare/workers-oauth-provider": "1.2.4",
+    "@modelcontextprotocol/server": "2.3.1",
+    "agents": "0.31.0",
+    "zod": "^4.2.0"
   }
 }

@@ -12,18 +12,18 @@
 | Cloudflare CLI | Wrangler ^4.0.0 | Configured; not deployed | `package.json`, `wrangler.jsonc` |
 | Tests | Vitest ^4.0.0 | Test suite passed on GitHub Node 24 | `tests/worker.test.ts` |
 | CI | GitHub Actions, Node 24 | Node 24 verified; main CI uses npm ci | `.github/workflows/ci.yml` |
-| Protocol | HTTP `/health`; `/mcp` always 503 | Implemented | `src/index.ts` |
+| Protocol | MCP SDK v2 via conditional OAuthResourceServer; unconfigured `/mcp` 503 | Implemented staging | `src/mcp/` |
 
-A committed npm lockfile enables reproducible `npm ci` installs. See [M0 GitHub-hosted verification](m0-verification.md). Neither MCP transport nor Meta API integration, OAuth, D1, KV, R2, UI, encryption, deployed endpoints or real platform tools exist.
+A committed npm lockfile enables reproducible `npm ci` installs. See [M0 GitHub-hosted verification](m0-verification.md). MCP transport and OAuth resource-server code now bundle and pass unit tests. The separate authorization server, Meta API integration, OAuth login, D1, KV, R2, encryption, deployed endpoints and real platform tools do not exist yet.
 
 ## Selected for upcoming milestones
 
-- **MCP protocol:** official TypeScript MCP SDK plus Cloudflare-compatible Streamable HTTP adapter. Verify SDK version, Workers runtime compatibility and current MCP protocol at implementation; do not hand-roll the protocol.
-- **MCP client authorization:** Cloudflare Workers OAuth Provider v1 split authorization/resource-server architecture. Separate authorization of a ChatGPT/Claude client from authorization to use a Meta account.
+- **MCP protocol:** MCP SDK v2.3.1, `agents` v0.31.0 stateless Streamable HTTP handler. The bundle is verified; live client interoperability remains untested.
+- **MCP client authorization:** Cloudflare Workers OAuth Provider v1.2.4 split architecture; resource half coded, authorization half pending. Separate authorization of a ChatGPT/Claude client from authorization to use a Meta account.
 - **Meta integration:** version-pinned Meta Graph API over native `fetch`, with granular permission checks. Account eligibility, endpoint permissions and API deprecations must be validated against current primary documentation.
 - **Database:** Cloudflare D1 for durable connection metadata, encrypted token payloads, pending approvals and audit events.
 - **Cryptography:** Workers Web Crypto. Encryption keys remain Cloudflare secrets, never D1, KV or GitHub.
-- **Validation:** Zod or similarly well-maintained schema validation for tool inputs and API responses (not yet selected or installed).
+- **Validation:** Zod 4 installed; schema and input constraints to be introduced with real tools.
 - **Media:** Cloudflare R2 for bounded temporary uploads only when publishing workflows need it.
 - **Cache:** Cloudflare KV for noncritical cache/config only. **The official Workers OAuth Provider manages OAuth internals in its supported KV storage.** Do not invent separate OAuth state logic; use transactional D1 for our custom one-time approvals and application replay protection.
 - **Local tests:** Vitest unit tests, mocked Meta API contract tests and Worker integration tests. Live permission tests occur only against assets controlled by the operator.
