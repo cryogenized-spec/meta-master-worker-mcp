@@ -1,0 +1,10 @@
+{
+  // Intentionally NOT deployable with a functional auth issuer as committed.
+  // Supply a real OAUTH_KV namespace and canonical URL bindings in the private
+  // Cloudflare environment after a complete operator sign-in/consent review.
+  "name": "meta-master-auth",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-11-12",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "workers_dev": false
+}
