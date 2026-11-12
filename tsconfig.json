@@ -10,7 +10,9 @@
     "strict": true,
     "noEmit": true,
     "skipLibCheck": true,
-    "types": [],
+    "types": [
+      "@cloudflare/workers-types"
+    ],
     "isolatedModules": true,
     "verbatimModuleSyntax": true
   },
