@@ -1,0 +1,28 @@
+name: Temporary M1.2d workerd test dependency lock
+
+on:
+  push:
+    branches: [feat/m1-2d-local-integration]
+    paths: ['.github/workflows/m1-2d-plugin-lock.yml']
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Generate reproducible integration tooling lockfile
+        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+      - name: Commit lockfile
+        run: |
+          git add package-lock.json
+          if ! git diff --cached --quiet; then
+            git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'build(m1.2d): lock Cloudflare Vitest plugin'
+            git push origin HEAD:feat/m1-2d-local-integration
+          fi
