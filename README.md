@@ -38,6 +38,7 @@ Local endpoints: `GET /health` reports M1 staging; `/mcp` returns HTTP 503 until
 - [M1.2c encrypted D1 credential adapter and test limitations](docs/m1-2c.md)
 - [M1.2d local OAuth and D1 integration results](docs/m1-2d.md)
 - [M1.3 read-only Meta Graph client and Page discovery](docs/m1-3.md)
+- [WhatsApp AI gateway — webhook, human queue and agent roadmap](docs/whatsapp-agent-roadmap.md)
 - [Threat model](docs/threat-model.md)
 - [Verified and planned technology stack](docs/tech-stack.md)
 - [Architecture](docs/architecture.md)
