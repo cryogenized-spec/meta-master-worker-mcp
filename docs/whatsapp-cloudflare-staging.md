@@ -1,6 +1,49 @@
 # WhatsApp gateway on Cloudflare — staging deployment gate
 
-**Status:** prepared, not provisioned or deployed. These instructions describe Cloudflare account changes requiring the operator's explicit terminal execution. No account IDs, production secrets, contacts, WhatsApp pairing, incoming messages or OpenAI requests are included.
+## Live free-tier checkpoint — 13 November 2026
+
+The account already has the isolated `meta-master-whatsapp-staging` D1 database, and migrations 0002 and 0003 were applied and verified. The dedicated `meta-master-whatsapp-gateway-staging` Worker has been uploaded with its D1 binding to this exact database. **Its workers.dev URL and preview URLs remain disabled and no secrets are yet installed.** Operator account: Cryogenized. **Do not repeat the database creation commands below**; they remain as new-account reference instructions.
+
+No paid plan, Containers, R2, OpenAI calls, WhatsApp account pairing or customer message sends have occurred. The deployed Worker is compiled from `src/whatsapp-staging.ts`, which exposes only `/health` and `/internal/whatsapp/baileys`. It does not deploy the main MCP/OAuth entrypoint.
+
+### Install the private stage keys from the operator's HP OMEN
+
+The Cloudflare connector declined an attempt to send private credential values. Rather than weaken that protection, the operator must install them locally using the guarded script. Download the two private configuration files supplied in the conversation to the HP OMEN; never attach them to GitHub or another chat.
+
+```bash
+mkdir -p ~/.config/meta-master-mcp
+chmod 700 ~/.config/meta-master-mcp
+mv ~/Downloads/meta-master-whatsapp-worker-secrets.env \
+  ~/.config/meta-master-mcp/worker-secrets.env
+chmod 600 ~/.config/meta-master-mcp/worker-secrets.env
+
+cd ~/meta-master-worker-mcp
+git pull --ff-only
+npm ci
+cp wrangler.whatsapp.example.jsonc .wrangler.whatsapp.local.jsonc
+sed -i 's/00000000-0000-4000-8000-000000000000/2b17507a-8455-4a94-b32b-615de1af9f86/' \
+  .wrangler.whatsapp.local.jsonc
+
+bash scripts/install-whatsapp-staging-secrets.sh \
+  ~/.config/meta-master-mcp/worker-secrets.env
+```
+
+The installer checks the exact Worker/D1 identifiers, disabled route, file permissions, independent 256-bit keys and Cloudflare login. It pipes each secret through standard input to Wrangler and never prints its value. Secret upload may create new Worker deployments. Inspect `wrangler whoami` to verify the intended Cloudflare account. Save the private recovery file offline; losing `WHATSAPP_DATA_KEY` means stored events cannot be decrypted.
+
+Then install the **local observer** settings:
+
+```bash
+cp ~/Downloads/meta-master-baileys-local.env \
+  ~/meta-master-worker-mcp/apps/baileys-bridge/.env.local
+chmod 600 ~/meta-master-worker-mcp/apps/baileys-bridge/.env.local
+```
+
+The `.env.local` file explicitly keeps `BAILEYS_ENABLE=false` and `BAILEYS_ALLOW_PAIRING=false`. Running `npm start` does not automatically load this file and remains safe/off by default. The synthetic ingress command later uses `node --env-file=.env.local dist/smoke.js` and requires an explicit `BAILEYS_SMOKE_SEND=true` per execution.
+
+**Stop here until the four Worker secret bindings are verified and the public test URL is intentionally enabled.** The existing staging Worker has no public route. The next controlled test is a synthetic signed fixture, not real WhatsApp messages.
+
+
+**Original template status:** source and reference instructions prepared. See the live checkpoint above for current staging deployment state. These instructions describe Cloudflare account changes requiring the operator's explicit terminal execution. No account IDs, production secrets, contacts, WhatsApp pairing, incoming messages or OpenAI requests are included.
 
 The current **Baileys Node process remains on the HP OMEN**. This stage moves the private signed event intake into a dedicated Cloudflare Worker + D1 database. It does NOT deploy the Baileys socket itself.
 
