@@ -87,6 +87,9 @@ describe("WhatsApp Cloud API webhook authentication", () => {
       type: "text",
       text: "Hi, do you have a catalog?",
     }]);
+    const padded = sample();
+    padded.entry[0].changes[0].value.messages[0].id = "wamid.HBg123abc+/==";
+    expect(extractIncoming(padded, number)[0].id).toBe("wamid.HBg123abc+/==");
     expect(extractIncoming(sample(), "different")).toEqual([]);
     const statusOnly = sample();
     delete (statusOnly.entry[0].changes[0].value as Record<string, unknown>).messages;
