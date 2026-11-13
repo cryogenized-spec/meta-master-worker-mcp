@@ -108,6 +108,17 @@ describe("separate Baileys bridge authentication boundary", () => {
     expect(() => normalizeBridgeEvents(old, bridgeId, now)).toThrow("invalid_bridge_event");
   });
 
+  it("rejects body streams exceeding the byte cap without trusting Content-Length", async () => {
+    const oversized = await signed("x".repeat(64 * 1024 + 1));
+    expect((await handleBaileysIngress(oversized, settings(), now)).status).toBe(413);
+  });
+
+  it("refuses reusing the encryption key as the bridge authentication secret", async () => {
+    const cfg = settings();
+    cfg.WHATSAPP_DATA_KEY = cfg.BAILEYS_BRIDGE_HMAC_KEY;
+    expect((await handleBaileysIngress(await signed(JSON.stringify(data())), cfg, now)).status).toBe(503);
+  });
+
   it("fails closed on malformed signed JSON", async () => {
     expect((await handleBaileysIngress(await signed("{not-json"), settings(), now)).status).toBe(400);
   });
