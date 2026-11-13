@@ -1,15 +1,9 @@
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { Miniflare } from "miniflare";
+import { describe, expect, it } from "vitest";
+import { env } from "cloudflare:workers";
 import { OAuthAuthorizationServer } from "@cloudflare/workers-oauth-provider";
 import { pkceChallenge, pkceVerifier } from "../../apps/auth/src/github-identity";
 
-const mf = new Miniflare({
-  modules: true,
-  script: 'export default { fetch() { return new Response("fixture") } }',
-  compatibilityDate: "2026-11-12",
-  kvNamespaces: ["OAUTH_KV"],
-});
-let kv: KVNamespace;
+const kv = (env as unknown as { OAUTH_KV: KVNamespace }).OAUTH_KV;
 
 const issuer = "https://auth.example.test/";
 const resourceUrl = "https://mcp.example.test/mcp";
@@ -24,14 +18,6 @@ const provider = new OAuthAuthorizationServer<{ OAUTH_KV: KVNamespace }>({
 
 const browserCookie = (headers: Headers) =>
   headers.getSetCookie().map(v => v.split(";")[0]).join("; ");
-
-beforeAll(async () => {
-  kv = await mf.getKVNamespace("OAUTH_KV") as KVNamespace;
-});
-
-afterAll(async () => {
-  await mf.dispose();
-});
 
 describe("M1.2d real OAuth Provider transactions against local KV", () => {
   it("enforces browser-bound consent, one-time handles, PKCE, resource audience and revocation", async () => {
