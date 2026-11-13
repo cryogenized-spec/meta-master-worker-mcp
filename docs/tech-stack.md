@@ -11,10 +11,10 @@
 | Language | TypeScript ^5.9.3 | Configured; locked by package-lock.json | `package.json`, `tsconfig.json` |
 | Cloudflare CLI | Wrangler ^4.0.0 | Configured; not deployed | `package.json`, `wrangler.jsonc` |
 | Tests | Vitest ^4.0.0 | Test suite passed on GitHub Node 24 | `tests/worker.test.ts` |
-| CI | GitHub Actions, Node 24 | Node 24 verified; main CI uses npm ci | `.github/workflows/ci.yml` |
+| CI | GitHub Actions, Node 24 | Node 24 CI with npm ci and workerd integration tests | `.github/workflows/ci.yml` |
 | Protocol | MCP SDK v2 via conditional OAuthResourceServer; unconfigured `/mcp` 503 | Implemented staging | `src/mcp/` |
 
-A committed npm lockfile enables reproducible `npm ci` installs. See [M0 GitHub-hosted verification](m0-verification.md). MCP resource-server and separate OAuth issuer Worker code now bundle and pass unit tests. The auth Worker now includes browser-bound consent and GitHub OAuth PKCE operator verification, but no GitHub app or OAuth storage has been configured for live use. AES-256-GCM encryption utilities, the D1 migration and an internal D1 credential adapter are present, but no live D1/KV binding, verified OAuth login, Meta API integration, R2, deployed endpoints or real Meta tools exist yet.
+A committed npm lockfile enables reproducible `npm ci` installs. See [M0 GitHub-hosted verification](m0-verification.md). MCP resource-server and separate OAuth issuer Worker code now bundle and pass unit tests. The auth Worker now includes browser-bound consent and GitHub OAuth PKCE operator verification, but no GitHub app or OAuth storage has been configured for live use. AES-256-GCM encryption utilities, the D1 migration and an internal D1 credential adapter are present, with verified **local workerd D1 and KV integration** via the official Cloudflare Vitest plugin. No remote D1/KV binding, real GitHub OAuth login, Meta API integration, R2, deployed endpoints or real Meta tools exist yet.
 
 ## Selected for upcoming milestones
 
@@ -26,7 +26,7 @@ A committed npm lockfile enables reproducible `npm ci` installs. See [M0 GitHub-
 - **Validation:** Zod 4 installed; schema and input constraints to be introduced with real tools.
 - **Media:** Cloudflare R2 for bounded temporary uploads only when publishing workflows need it.
 - **Cache:** Cloudflare KV for noncritical cache/config only. **The official Workers OAuth Provider manages OAuth internals in its supported KV storage.** Do not invent separate OAuth state logic; use transactional D1 for our custom one-time approvals and application replay protection.
-- **Local tests:** Vitest unit tests, mocked Meta API contract tests and Worker integration tests. Live permission tests occur only against assets controlled by the operator.
+- **Testing:** Node-hosted Vitest unit tests plus the official Cloudflare Vitest plugin for local workerd-backed D1, KV and OAuth Provider lifecycle tests. Remote account permission tests are still pending and must use operator-controlled assets.
 - **CLI:** a Node.js TypeScript entry point sharing the same service layer and security decisions as the MCP transport.
 
 ## Possible later UI
