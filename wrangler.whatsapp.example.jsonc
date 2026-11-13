@@ -1,0 +1,17 @@
+{
+  // PRIVATE TEMPLATE ONLY. Copy to .wrangler.whatsapp.local.jsonc and
+  // replace database_id with YOUR staging D1 UUID. Do not deploy this file.
+  // Never add production credentials to Wrangler vars or Git.
+  "name": "meta-master-whatsapp-gateway-staging",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-11-12",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": false,
+  "d1_databases": [
+    {
+      "binding": "WHATSAPP_DB",
+      "database_name": "meta-master-whatsapp-staging",
+      "database_id": "00000000-0000-4000-8000-000000000000"
+    }
+  ]
+}

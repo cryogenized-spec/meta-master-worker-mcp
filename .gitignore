@@ -22,3 +22,7 @@ auth_info*/
 **/session-keys/
 apps/baileys-bridge/.session/
 apps/baileys-bridge/.local/
+
+# Generated, local-only Cloudflare account bindings and private credentials.
+.private/
+.wrangler.whatsapp.local.jsonc

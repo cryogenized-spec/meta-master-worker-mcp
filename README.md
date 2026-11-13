@@ -40,6 +40,7 @@ Local endpoints: `GET /health` reports M1 staging; `/mcp` returns HTTP 503 until
 - [M1.3 read-only Meta Graph client and Page discovery](docs/m1-3.md)
 - [WhatsApp AI gateway — webhook, human queue and agent roadmap](docs/whatsapp-agent-roadmap.md)
 - [Experimental Baileys linked-device bridge (observation-only, no pairing by default)](docs/baileys-bridge.md)
+- [Cloudflare staging setup and future Baileys Container migration](docs/whatsapp-cloudflare-staging.md)
 - [Threat model](docs/threat-model.md)
 - [Verified and planned technology stack](docs/tech-stack.md)
 - [Architecture](docs/architecture.md)
