@@ -120,17 +120,17 @@ describe("M1.3 read-only Graph API client", () => {
   });
 
   it("computes appsecret_proof without exposing app secret or token as URL params", async () => {
-    let requestUrl: URL | undefined;
+    const observed: URL[] = [];
     const client = new MetaGraphClient({
       appSecret: "fixture-app-secret",
       fetcher: fetchMock(url => {
-        requestUrl = url;
+        observed.push(url);
         return Response.json({ data: [] });
       }),
     });
     await client.listPages(secretToken);
-    expect(requestUrl?.searchParams.get("appsecret_proof")).toMatch(/^[0-9a-f]{64}$/);
-    expect(requestUrl?.href).not.toContain(secretToken);
+    expect(observed[0].searchParams.get("appsecret_proof")).toMatch(/^[0-9a-f]{64}$/);
+    expect(observed[0].href).not.toContain(secretToken);
     expect(requestUrl?.href).not.toContain("fixture-app-secret");
   });
 
