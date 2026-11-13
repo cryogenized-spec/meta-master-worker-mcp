@@ -115,7 +115,7 @@ export function extractIncoming(
       if (value.messages.length > MAX_MESSAGES) throw new Error("too_many_messages");
       for (const message of value.messages) {
         if (!object(message) || typeof message.id !== "string" ||
-            !/^[A-Za-z0-9._:-]{1,256}$/.test(message.id) ||
+            !/^[A-Za-z0-9._:/+=-]{1,256}$/.test(message.id) ||
             typeof message.from !== "string" || !/^[0-9]{8,20}$/.test(message.from) ||
             typeof message.timestamp !== "string" || !/^[0-9]{9,12}$/.test(message.timestamp)) continue;
         const type = message.type === "text" && object(message.text) &&
