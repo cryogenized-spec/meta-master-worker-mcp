@@ -76,3 +76,15 @@ PR CI tests the HMAC wire protocol, missing/incomplete credentials, incorrect si
 - Current auth storage guidance: https://github.com/WhiskeySockets/docs/blob/main/authentication/session-management.mdx
 - Current quickstart: https://github.com/WhiskeySockets/docs/blob/main/quickstart.mdx
 - WhatsApp Messenger terms: https://www.whatsapp.com/legal/terms-of-service
+
+## Local encrypted observation spool (W0g)
+
+An allowlisted `notify` message is now written first to an AES-256-GCM-encrypted local queue (outside Git) and fsynced before any signed HTTP forwarding. Files are named with a private keyed digest of the sender/chat and message ID, never a plaintext WhatsApp number or message. Delivery is retried every 15 seconds while the bridge remains running, and a restart can replay records encrypted under the **same** `BAILEYS_SPOOL_KEY`. Only successful HTTP 200 acknowledgment removes the file. HTTP errors keep the record.
+
+An event more than one hour old is **not automatically retried to the current Worker**, because the Worker deliberately rejects stale event timestamps. Instead it remains encrypted on disk and is reported for manual review. The queue is bounded to 1000 events. This prevents silent loss but is **not** a complete production dead-letter/retention solution; manual quarantine, user-visible review and privacy deletion are still on the roadmap.
+
+The spool requires a THIRD independent 32-byte random secret, `BAILEYS_SPOOL_KEY`. Do not reuse `WHATSAPP_DATA_KEY` or `BAILEYS_BRIDGE_HMAC_KEY`. The updated private generator emits all three into `.private/whatsapp-staging.env` on a new installation. If you already generated that file, **do not overwrite the existing Worker keys**: separately create a new `BAILEYS_SPOOL_KEY` using `openssl rand -base64 32 | tr '+/' '-_' | tr -d '=\\n'` and store it privately on your laptop. Losing this third key makes pending encrypted messages unreadable. The runtime refuses to connect if the spool key is invalid or the queue directory has group/other permissions.
+
+The default spool directory is `~/.local/share/meta-master-baileys-spool`. Only explicitly allowlisted chats enter the spool, and WhatsApp pairing continues to require independent opt-in. This local spool deliberately remains off-container until a reviewed Cloudflare session/auth storage adapter is available.
+
+The current queue needs further hardening before any high-volume or business-critical deployment: single-process locking, manual stale-entry quarantine UI, race-free concurrent deduplication across processes, and privacy retention/erasure. It is a safety improvement for the local prototype, **not** a guarantee of zero lost events.
