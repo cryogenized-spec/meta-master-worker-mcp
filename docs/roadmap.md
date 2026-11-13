@@ -53,7 +53,7 @@ Completion checklist:
 
 ## M1 — Authentication, account connection and MCP protocol
 
-**State: in progress — M1.1 protected transport and M1.2a foundations validated. M1.2b adds browser-bound consent and GitHub verified operator ID with PKCE; M1.2c adds the internal encrypted D1 connection adapter. M1.2d now verifies OAuth grants and the vault against local workerd KV/D1. Live OAuth configuration, remote database provisioning and Meta onboarding remain outstanding. Priority: P0. Depends on M0.**
+**State: in progress — M1.1 protected transport and M1.2a foundations validated. M1.2b adds browser-bound consent and GitHub verified operator ID with PKCE; M1.2c adds the internal encrypted D1 connection adapter. M1.2d verifies OAuth grants and the vault against local workerd KV/D1; M1.3 adds the constrained read-only Graph v27 client and operator-scoped Page discovery service. Live OAuth configuration, Cloudflare provisioning and actual Meta account onboarding remain outstanding. Priority: P0. Depends on M0.**
 
 - [x] Implement and bundle stateless SDK v2 Streamable HTTP MCP resource handler behind Cloudflare OAuthResourceServer; verify fail-closed configuration and scope enforcement in code. [CI](m1-validation.md).
 - [x] Verify consent browser binding, one-time OAuth codes, resource audience and token revocation against local workerd KV using OAuth Provider. [M1.2d](m1-2d.md).
@@ -66,7 +66,8 @@ Completion checklist:
 - [x] Implement internal D1 adapter with ciphertext-only create/read, operator-scoped metadata listing, expiry filtering and audited local disconnect. [M1.2c](m1-2c.md).
 - [x] Execute D1 schema and encrypted vault lifecycle against local workerd D1/KV, including transaction rollback and cross-operator isolation. [CI](m1-2d.md).
 - [ ] Provision private Cloudflare D1/KV, apply migration to a real test database, and implement provider-side revocation, safe refresh and key rotation.
-- [ ] Build Meta Graph API client with pinned API version, allowlisted requests, safe retries, rate-limit/backoff behaviour and redacted errors.
+- [x] Implement pinned Meta Graph v27.0 read-only Page-discovery client with allowlisted endpoint, bounded retries and redacted errors, plus operator/scopes vault checks. [M1.3 design](m1-3.md).
+- [ ] Verify this Graph client with an authorised live Meta developer account and Page before treating its endpoint as supported.
 - [ ] Implement account and permission diagnostics: connected identity, effective scopes, assets, Page tasks and missing authorisations.
 - [ ] Ensure unauthenticated, expired, cross-account and insufficient-scope requests fail closed.
 - [ ] Connect one authorised Meta developer/test account without recording any secrets in CI.
