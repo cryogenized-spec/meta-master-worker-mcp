@@ -16,7 +16,7 @@
     "deploy": "wrangler deploy",
     "build:resource": "wrangler deploy --dry-run --outdir dist",
     "build:auth": "wrangler deploy --config apps/auth/wrangler.jsonc --dry-run --outdir dist-auth",
-    "test:integration": "vitest run tests/integration --testTimeout 30000 --hookTimeout 30000"
+    "test:integration": "vitest run --config vitest.integration.config.ts"
   },
   "devDependencies": {
     "typescript": "^5.9.3",
