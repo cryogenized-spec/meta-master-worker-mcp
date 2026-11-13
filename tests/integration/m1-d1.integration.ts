@@ -16,8 +16,9 @@ beforeAll(async () => {
   // D1Database.exec splits input on newlines; the migration includes multiline
   // CREATE TABLE statements. Submit each complete statement as a bound batch.
   const statements = migrationSql
+    .replace(/^\s*--.*$/gm, "")
     .split(";")
-    .map(part => part.replace(/^\s*--.*$/gm, "").trim())
+    .map(part => part.trim())
     .filter(Boolean);
   await db.batch(statements.map(sql => db.prepare(sql)));
   vault = new MetaConnectionVault({ META_DB: db, META_TOKEN_ENCRYPTION_KEY: key });
