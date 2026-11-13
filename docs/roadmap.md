@@ -118,7 +118,7 @@ Completion checklist:
 
 ## M5 — Optional business extensions
 
-**State: planned. Priority: P3. Modules may be developed independently after M1/M2.**
+**State: WhatsApp W0 groundwork under development; Messenger and Ads remain planned. Priority: P3. Modules may be developed independently after M1/M2.**
 
 **Messenger**
 - [ ] Page conversation access and message-window/permission safeguards.
