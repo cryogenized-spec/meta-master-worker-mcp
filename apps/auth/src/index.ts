@@ -134,7 +134,7 @@ async function callback(
     return redirectFrom(headers, authorizationErrorRedirect(original, "access_denied"));
   }
 
-  const userId = "github:" + operatorId;
+  const userId = "github-" + operatorId;
   const result = await oauth.completeAuthorization({
     request: original,
     userId,

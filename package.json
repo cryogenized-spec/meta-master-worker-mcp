@@ -11,17 +11,20 @@
     "dev": "wrangler dev",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "check": "npm run typecheck && npm run test",
+    "check": "npm run typecheck && npm run test && npm run test:integration",
     "build": "npm run build:resource && npm run build:auth",
     "deploy": "wrangler deploy",
     "build:resource": "wrangler deploy --dry-run --outdir dist",
-    "build:auth": "wrangler deploy --config apps/auth/wrangler.jsonc --dry-run --outdir dist-auth"
+    "build:auth": "wrangler deploy --config apps/auth/wrangler.jsonc --dry-run --outdir dist-auth",
+    "test:integration": "vitest run --config vitest.integration.config.ts"
   },
   "devDependencies": {
     "typescript": "^5.9.3",
-    "vitest": "^4.0.0",
+    "vitest": "^4.1.0",
     "wrangler": "^4.0.0",
-    "@cloudflare/workers-types": "5.20261110.1"
+    "@cloudflare/workers-types": "5.20261110.1",
+    "@types/node": "^24.0.0",
+    "@cloudflare/vitest-plugin": "1.6.1"
   },
   "dependencies": {
     "@cloudflare/workers-oauth-provider": "1.2.4",
