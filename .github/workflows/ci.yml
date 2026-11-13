@@ -38,6 +38,13 @@ jobs:
             echo "Unexpected private secret overwrite!"
             exit 1
           fi
+      - name: Validate offline-only Wrangler secret installer syntax and default refusal
+        run: |
+          bash -n scripts/install-whatsapp-staging-secrets.sh
+          if bash scripts/install-whatsapp-staging-secrets.sh; then
+            echo "Installer unexpectedly accepted missing private secrets."
+            exit 1
+          fi
       - name: Install isolated Baileys observer dependencies
         run: npm ci --prefix apps/baileys-bridge --no-audit --no-fund
       - name: Compile and test observation-only Baileys bridge
