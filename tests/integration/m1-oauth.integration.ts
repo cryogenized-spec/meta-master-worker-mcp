@@ -81,10 +81,10 @@ describe("M1.2d real OAuth Provider transactions against local KV", () => {
     // not call completeAuthorization until GitHub verification succeeds.
     const grant = await oauth.completeAuthorization({
       request: finished.request,
-      userId: "github:100000",
+      userId: "github-100000",
       metadata: {},
       scope: ["mcp:read"],
-      props: { userId: "github:100000" },
+      props: { userId: "github-100000" },
     });
     const code = new URL(grant.redirectTo).searchParams.get("code");
     expect(code).toBeTruthy();
