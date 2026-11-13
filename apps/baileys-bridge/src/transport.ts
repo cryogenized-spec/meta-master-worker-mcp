@@ -14,6 +14,7 @@ export interface MinimalBaileysMessage {
   message?: {
     conversation?: string | null;
     extendedTextMessage?: { text?: string | null } | null;
+    imageMessage?: unknown;
   } | null;
 }
 
