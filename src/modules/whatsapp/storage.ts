@@ -1,5 +1,6 @@
 import { encryptMetaToken } from "../../storage/token-crypto";
 import type { InboundWhatsAppMessage, WhatsAppWebhookEnv } from "./webhook";
+import { reviewReason } from "./review-policy";
 
 /**
  * Persist *only* authenticated webhook events. The gateway calls this AFTER
@@ -62,7 +63,8 @@ export async function storeWhatsAppEvents(
       },
     );
     const digest = await contactDigest(key, message.phoneNumberId, message.from);
-    const state = message.type === "text" ? "received" : "needs_human";
+    const reason = reviewReason(message.type, message.text);
+    const state = reason === null ? "received" : "needs_human";
 
     queries.push(db.prepare(
       "INSERT OR IGNORE INTO wa_events (message_id,phone_number_id,contact_digest,event_ciphertext,event_type,event_ts,received_at,state) VALUES (?,?,?,?,?,?,?,?)",
@@ -73,10 +75,10 @@ export async function storeWhatsAppEvents(
       "INSERT OR IGNORE INTO wa_audit (audit_key,message_id,action,recorded_at) VALUES (?,?,?,?)",
     ).bind(message.id + ":received", message.id, "received", receivedAt));
 
-    if (message.type !== "text") {
+    if (reason !== null) {
       queries.push(db.prepare(
         "INSERT OR IGNORE INTO wa_handoffs (message_id,reason,status,created_at) VALUES (?,?,'open',?)",
-      ).bind(message.id, "unsupported_content_requires_human", receivedAt));
+      ).bind(message.id, reason, receivedAt));
     }
   }
   // Transactional D1 batch. A webhook is acknowledged only once durable
