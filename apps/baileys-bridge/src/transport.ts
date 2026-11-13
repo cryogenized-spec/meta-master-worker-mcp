@@ -14,7 +14,6 @@ export interface MinimalBaileysMessage {
   message?: {
     conversation?: string | null;
     extendedTextMessage?: { text?: string | null } | null;
-    [key: string]: unknown;
   } | null;
 }
 
@@ -98,8 +97,10 @@ export async function forwardObservedMessage(
 ): Promise<void> {
   const request = signBridgeEvent(message, config);
   // An ingress acknowledgment does not authorise an AI reply.
+  const body = new ArrayBuffer(request.body.byteLength);
+  new Uint8Array(body).set(request.body);
   const response = await fetcher(config.endpoint, {
-    method: "POST", headers: request.headers, body: request.body,
+    method: "POST", headers: request.headers, body,
     redirect: "error", signal: AbortSignal.timeout(8000),
   });
   if (response.status !== 200) throw new Error("bridge_ingress_rejected");
