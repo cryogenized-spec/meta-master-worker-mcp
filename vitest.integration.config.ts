@@ -6,7 +6,10 @@ export default defineConfig({
     cloudflareTest({
       wrangler: { configPath: "./wrangler.jsonc" },
       miniflare: {
-        d1Databases: { META_DB: "00000000-0000-4000-8000-000000000001" },
+        d1Databases: {
+          META_DB: "00000000-0000-4000-8000-000000000001",
+          WHATSAPP_DB: "00000000-0000-4000-8000-000000000002",
+        },
         kvNamespaces: ["OAUTH_KV"],
       },
     }),
