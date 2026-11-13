@@ -1,10 +1,11 @@
 import { isMcpResourcePath, isResourceConfigured, type ResourceEnv } from "./mcp/config";
+import type { WhatsAppWebhookEnv } from "./modules/whatsapp/webhook";
 
 /**
  * M1 resource worker: the MCP SDK is reachable only when the independent
  * OAuth authorization service binding and canonical URLs are configured.
  */
-export interface Env extends ResourceEnv {}
+export interface Env extends ResourceEnv, WhatsAppWebhookEnv {}
 
 const headers = {
   "content-type": "application/json; charset=utf-8",
@@ -52,6 +53,13 @@ export function handleRequest(request: Request): Response {
 export default {
   async fetch(request: Request, env: Env, ctx?: ExecutionContext): Promise<Response> {
     const path = new URL(request.url).pathname;
+    if (path === "/webhooks/whatsapp") {
+      const [{ handleWhatsAppWebhook }, { storeWhatsAppEvents }] = await Promise.all([
+        import("./modules/whatsapp/webhook"),
+        import("./modules/whatsapp/storage"),
+      ]);
+      return handleWhatsAppWebhook(request, env, storeWhatsAppEvents);
+    }
     if (isMcpResourcePath(path)) {
       if (isResourceConfigured(env)) {
         const { handleMcpResource } = await import("./mcp/resource");
