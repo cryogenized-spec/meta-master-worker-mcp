@@ -95,6 +95,26 @@ Before using any personal WhatsApp account:
 2. POST a **synthetic fixture** signed using the Node \`transport.ts\` signing routine (not a real customer message). Expect HTTP 200 and encrypted D1 receipt.
 3. Re-submit the *same* signed fixture: HTTP 200, one D1 event. Submit different body with same nonce and valid MAC: HTTP 409.
 4. Confirm D1 contains no plaintext message text or customer phone number; the agent control row remains OFF.
+
+### Safe signed smoke request without connecting WhatsApp
+
+Once the Worker is deployed with **real** staging secrets, you can submit a fake, clearly-labelled message through the same HMAC protocol without pairing any WhatsApp account:
+
+```bash
+cd ~/meta-master-worker-mcp/apps/baileys-bridge
+cp .env.example .env.local
+nano .env.local
+# Keep BAILEYS_ENABLE=false and BAILEYS_ALLOW_PAIRING=false.
+# Set only BAILEYS_BRIDGE_URL, BAILEYS_BRIDGE_ID=omen-local and
+# BAILEYS_BRIDGE_HMAC_KEY to the same private HMAC key as the Worker.
+# Never put the WHATSAPP_DATA_KEY or your WhatsApp number here.
+npm run build
+BAILEYS_SMOKE_SEND=true node --env-file=.env.local dist/smoke.js
+```
+
+Expected success is a **signed synthetic event accepted** message. This uses a fictitious contact and **does not contact WhatsApp**. The resulting D1 entry is test data; remove it under an approved retention policy when the live pipeline is implemented. Running `npm run smoke` without `BAILEYS_SMOKE_SEND=true` does nothing.
+
+
 5. Configure an explicit local test-chat allowlist. The observer must not access other chats, groups, message history or outbound send APIs.
 6. Decide separately whether to pair a disposable WhatsApp test account or a primary personal account, with full awareness of platform restrictions.
 
