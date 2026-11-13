@@ -114,7 +114,8 @@ describe("M1.2d real OAuth Provider transactions against local KV", () => {
     const access = result.access_token;
     expect(typeof access).toBe("string");
     expect(await provider.validateToken(resourceUrl, access as string, env)).not.toBeNull();
-    expect(await provider.validateToken("https://other.example.test/mcp", access as string, env)).toBeNull();
+    await expect(provider.validateToken("https://other.example.test/mcp", access as string, env))
+      .rejects.toThrow("resource must name one registered protected resource");
 
     // Authorization codes must not be redeemed more than once.
     const second = await provider.fetch(new Request(new URL("oauth/token", issuer), {
