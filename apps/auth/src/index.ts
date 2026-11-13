@@ -81,7 +81,7 @@ async function authorize(
   const decision = form.get("decision");
   if (decision !== "approve") {
     const denied = await oauth.denyConsent(request, handle);
-    return redirectFrom(denied.headers, denied.headers.get("Location") ?? "");
+    return new Response(null, { status: 302, headers: denied.headers });
   }
 
   const scope = form.getAll("scope");
