@@ -131,7 +131,7 @@ describe("M1.3 read-only Graph API client", () => {
     await client.listPages(secretToken);
     expect(observed[0].searchParams.get("appsecret_proof")).toMatch(/^[0-9a-f]{64}$/);
     expect(observed[0].href).not.toContain(secretToken);
-    expect(requestUrl?.href).not.toContain("fixture-app-secret");
+    expect(observed[0].href).not.toContain("fixture-app-secret");
   });
 
   it("treats network and upstream failures as a bounded, non-sensitive error", async () => {
