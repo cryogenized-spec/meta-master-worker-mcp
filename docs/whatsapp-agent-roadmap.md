@@ -65,7 +65,7 @@ For the current first slice there is **no agent or outbound send implementation*
 - [x] W0a — Signed webhook challenge/notification handling, strict parsing, fail closed by default
 - [x] W0b — Encrypted D1 inbox, deduplication, audit events, human handoffs and OFF mode
 - [x] W0c — GitHub CI passed Node 24, signed-webhook unit tests, actual local D1/KV encryption and handoff tests, and both Worker dry-run builds ([run 43454832954](https://github.com/cryogenized-spec/meta-master-worker-mcp/actions/runs/43454832954))
-- [ ] W0d — Experimental [Baileys bridge](baileys-bridge.md): opt-in linked-device Node observer, allowlisted contacts, separate signed ingress, no replies; validate CI before merging.
+- [x] W0d — Experimental [Baileys bridge](baileys-bridge.md): opt-in linked-device Node observer, allowlisted contacts, separate signed ingress, no replies; Node 24 and local workerd CI [passed](https://github.com/cryogenized-spec/meta-master-worker-mcp/actions/runs/43473036363). **No account linked or deployment performed.**
 - [ ] W1a — Private official Meta Business test phone, credentials/bindings and live webhook signature verification
 - [ ] W1b — Authenticated operator controls: OFF/DRAFT/AUTO mode, read-only queue, review/resolve, privacy deletion
 - [ ] W2a — Durable job queue, session time-window enforcement, conversation ordering and retry/dead-letter handling
