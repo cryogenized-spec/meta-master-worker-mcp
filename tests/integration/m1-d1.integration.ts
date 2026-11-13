@@ -13,7 +13,13 @@ beforeAll(async () => {
   const bindings = env as unknown as { META_DB: D1Database; OAUTH_KV: KVNamespace };
   db = bindings.META_DB;
   kv = bindings.OAUTH_KV;
-  await db.exec(migrationSql);
+  // D1Database.exec splits input on newlines; the migration includes multiline
+  // CREATE TABLE statements. Submit each complete statement as a bound batch.
+  const statements = migrationSql
+    .split(";")
+    .map(part => part.replace(/^\s*--.*$/gm, "").trim())
+    .filter(Boolean);
+  await db.batch(statements.map(sql => db.prepare(sql)));
   vault = new MetaConnectionVault({ META_DB: db, META_TOKEN_ENCRYPTION_KEY: key });
 });
 
@@ -27,7 +33,7 @@ describe("M1.2d real workerd-backed D1 and KV integration", () => {
 
   it("creates encrypted credentials, isolates identities, lists metadata, and disconnects", async () => {
     const connectionId = crypto.randomUUID();
-    const owner = "github:123456";
+    const owner = "github-123456";
     const token = "dummy-workerd-test-credential-never-a-real-token";
     const summary = await vault.create({
       connectionId, operatorId: owner, platform: "facebook",
@@ -38,8 +44,8 @@ describe("M1.2d real workerd-backed D1 and KV integration", () => {
     });
     expect(summary).not.toHaveProperty("accessToken");
     expect(await vault.readToken(owner, connectionId)).toBe(token);
-    expect(await vault.readToken("github:999999", connectionId)).toBeNull();
-    expect((await vault.list("github:999999")).length).toBe(0);
+    expect(await vault.readToken("github-999999", connectionId)).toBeNull();
+    expect((await vault.list("github-999999")).length).toBe(0);
     const list = await vault.list(owner);
     expect(list.find(row => row.connectionId === connectionId)).toMatchObject({
       platform: "facebook", grantedScopes: ["pages_show_list"],
@@ -51,7 +57,7 @@ describe("M1.2d real workerd-backed D1 and KV integration", () => {
     ).bind(connectionId).first<{ token_ciphertext: string }>();
     expect(raw?.token_ciphertext).toMatch(/^v1\./);
     expect(raw?.token_ciphertext).not.toContain(token);
-    expect(await vault.disconnect("github:999999", connectionId)).toBe(false);
+    expect(await vault.disconnect("github-999999", connectionId)).toBe(false);
     expect(await vault.readToken(owner, connectionId)).toBe(token);
     expect(await vault.disconnect(owner, connectionId)).toBe(true);
     expect(await vault.readToken(owner, connectionId)).toBeNull();
@@ -64,7 +70,7 @@ describe("M1.2d real workerd-backed D1 and KV integration", () => {
   it("rejects duplicate connection creation and leaves just one audit entry", async () => {
     const connectionId = crypto.randomUUID();
     const entry = {
-      connectionId, operatorId: "github:123456", platform: "facebook" as const,
+      connectionId, operatorId: "github-123456", platform: "facebook" as const,
       externalAccountId: "page-" + connectionId,
       accessToken: "fake-token", grantedScopes: [], expiresAt: null,
     };
@@ -79,11 +85,11 @@ describe("M1.2d real workerd-backed D1 and KV integration", () => {
   it("enforces token expiration with actual D1 reads", async () => {
     const connectionId = crypto.randomUUID();
     await vault.create({
-      connectionId, operatorId: "github:123456", platform: "threads",
+      connectionId, operatorId: "github-123456", platform: "threads",
       externalAccountId: "account-" + connectionId,
       accessToken: "expired-fake-token", grantedScopes: [], expiresAt: 1000,
     }, 1);
-    expect(await vault.readToken("github:123456", connectionId, 1000)).toBeNull();
+    expect(await vault.readToken("github-123456", connectionId, 1000)).toBeNull();
   });
 
   it("does not leave a partial connection after a transaction fails", async () => {
@@ -91,10 +97,10 @@ describe("M1.2d real workerd-backed D1 and KV integration", () => {
     await expect(db.batch([
       db.prepare(
         "INSERT INTO meta_connections (connection_id,operator_id,platform,external_account_id,token_ciphertext,created_at,updated_at) VALUES (?,?,?,?,?,?,?)"
-      ).bind(id, "github:123456", "facebook", "rollback-" + id, "fixture-ciphertext", 1, 1),
+      ).bind(id, "github-123456", "facebook", "rollback-" + id, "fixture-ciphertext", 1, 1),
       db.prepare(
         "INSERT INTO connection_audit (id,operator_id,connection_id,event_type,occurred_at) VALUES (?,?,?,?,?)"
-      ).bind(crypto.randomUUID(), "github:123456", id, "forbidden-event", 1),
+      ).bind(crypto.randomUUID(), "github-123456", id, "forbidden-event", 1),
     ])).rejects.toThrow();
     expect(await db.prepare("SELECT connection_id FROM meta_connections WHERE connection_id=?")
       .bind(id).first()).toBeNull();
