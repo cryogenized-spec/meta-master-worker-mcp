@@ -14,3 +14,11 @@ coverage/
 *.key
 *.p12
 *.pfx
+
+# Linked-device session credentials and Signal keys must never enter Git.
+auth_info*/
+**/auth_info*/
+**/.private-session/
+**/session-keys/
+apps/baileys-bridge/.session/
+apps/baileys-bridge/.local/

@@ -53,6 +53,10 @@ export function handleRequest(request: Request): Response {
 export default {
   async fetch(request: Request, env: Env, ctx?: ExecutionContext): Promise<Response> {
     const path = new URL(request.url).pathname;
+    if (path === "/internal/whatsapp/baileys") {
+      const { handleBaileysIngress } = await import("./modules/whatsapp/bridge-ingress");
+      return handleBaileysIngress(request, env);
+    }
     if (path === "/webhooks/whatsapp") {
       const [{ handleWhatsAppWebhook }, { storeWhatsAppEvents }] = await Promise.all([
         import("./modules/whatsapp/webhook"),

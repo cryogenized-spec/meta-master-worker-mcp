@@ -35,15 +35,30 @@ async function contactDigest(secret: string, phoneNumberId: string, from: string
   return Array.from(hash, value => value.toString(16).padStart(2, "0")).join("");
 }
 
+/** Optional signed-bridge receipt is inserted in the same D1 transaction. */
+export interface BridgeReceipt {
+  bridgeId: string;
+  nonce: string;
+  bodyDigest: string;
+  receivedAt: number;
+}
+
 export async function storeWhatsAppEvents(
   messages: InboundWhatsAppMessage[],
   env: WhatsAppWebhookEnv,
+  bridgeReceipt?: BridgeReceipt,
 ): Promise<void> {
-  if (messages.length === 0) return; // Delivery statuses require no write.
+  if (messages.length === 0 && !bridgeReceipt) return; // No event to store.
   const { db, key } = configured(env);
   if (messages.length > 80) throw new Error("whatsapp_event_batch_too_large");
   const receivedAt = Math.floor(Date.now() / 1000);
   const queries: D1PreparedStatement[] = [];
+  if (bridgeReceipt) {
+    queries.push(db.prepare(
+      "INSERT INTO wa_bridge_receipts (bridge_id,nonce,body_sha256,received_at) VALUES (?,?,?,?)",
+    ).bind(bridgeReceipt.bridgeId, bridgeReceipt.nonce,
+      bridgeReceipt.bodyDigest, bridgeReceipt.receivedAt));
+  }
 
   for (const message of messages) {
     // The sender, text and event timestamp are entirely inside AES-GCM

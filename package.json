@@ -10,7 +10,7 @@
   "scripts": {
     "dev": "wrangler dev",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run",
+    "test": "vitest run tests",
     "check": "npm run typecheck && npm run test && npm run test:integration",
     "build": "npm run build:resource && npm run build:auth",
     "deploy": "wrangler deploy",

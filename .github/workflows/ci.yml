@@ -27,3 +27,7 @@ jobs:
         run: npm run check
       - name: Validate Worker bundle without deployment
         run: npm run build
+      - name: Install isolated Baileys observer dependencies
+        run: npm ci --prefix apps/baileys-bridge --no-audit --no-fund
+      - name: Compile and test observation-only Baileys bridge
+        run: npm test --prefix apps/baileys-bridge

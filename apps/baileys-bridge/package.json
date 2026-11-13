@@ -1,0 +1,25 @@
+{
+  "name": "meta-master-baileys-bridge",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Opt-in, read-only linked-device bridge for local Meta Master MCP testing",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "npm run build && node --test dist/*.test.js",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@whiskeysockets/baileys": "7.0.0-rc14",
+    "pino": "10.1.0",
+    "qrcode-terminal": "0.12.0"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3",
+    "@types/node": "^24.0.0",
+    "@types/qrcode-terminal": "0.12.2"
+  }
+}
