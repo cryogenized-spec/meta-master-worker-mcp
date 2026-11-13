@@ -176,7 +176,9 @@ export async function handleBaileysIngress(
     return reply(400, "Invalid payload");
   }
 
-  const bodyHash = hex(new Uint8Array(await crypto.subtle.digest("SHA-256", body)));
+  const bodyBuffer = new ArrayBuffer(body.byteLength);
+  new Uint8Array(bodyBuffer).set(body);
+  const bodyHash = hex(new Uint8Array(await crypto.subtle.digest("SHA-256", bodyBuffer)));
   const receipt = {
     bridgeId, nonce, bodyDigest: bodyHash, receivedAt: nowSeconds,
   };
@@ -199,7 +201,9 @@ export async function handleBaileysIngress(
       const identifier = new TextEncoder().encode(
         [bridgeId, event.chatJid, event.messageId].join("\n"),
       );
-      const digest = hex(new Uint8Array(await crypto.subtle.digest("SHA-256", identifier)));
+      const idBuffer = new ArrayBuffer(identifier.byteLength);
+      new Uint8Array(idBuffer).set(identifier);
+      const digest = hex(new Uint8Array(await crypto.subtle.digest("SHA-256", idBuffer)));
       normalized.push({
         id: "bridge-" + digest,
         from: event.chatJid,
