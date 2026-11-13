@@ -53,12 +53,13 @@ Completion checklist:
 
 ## M1 — Authentication, account connection and MCP protocol
 
-**State: in progress — M1.1 protected transport validated; M1.2a separate fail-closed authorisation Worker and token encryption groundwork validated. Operator sign-in, consent, live OAuth and Meta onboarding remain outstanding. Priority: P0. Depends on M0.**
+**State: in progress — M1.1 protected transport and M1.2a foundations validated. M1.2b adds browser-bound consent and GitHub verified operator ID with PKCE; live OAuth configuration/interoperability and Meta onboarding remain outstanding. Priority: P0. Depends on M0.**
 
 - [x] Implement and bundle stateless SDK v2 Streamable HTTP MCP resource handler behind Cloudflare OAuthResourceServer; verify fail-closed configuration and scope enforcement in code. [CI](m1-validation.md).
 - [ ] Verify actual client authentication, scope checks and transport interoperability against a real authorization Worker and test clients.
 - [x] Create separate OAuth issuer Worker shell with denied-by-default /authorize, scope restriction and configuration validation. [M1.2a](m1-2a.md).
-- [ ] Implement genuine operator sign-in, per-client consent, live token issuance/revocation and client interoperability.
+- [x] Implement GitHub OAuth PKCE operator verification and browser-bound read-only MCP client consent source code and unit tests. [Design](m1-2b.md).
+- [ ] Verify actual operator sign-in, client consent, live token issuance/revocation and MCP interoperability against configured OAuth KV, a registered GitHub app and private service bindings.
 - [ ] Implement Meta OAuth onboarding for operator-controlled assets with CSRF-safe single-use state and exact redirect URI binding.
 - [x] Implement and test AES-256-GCM token envelope primitives with per-connection authenticated context and draft ciphertext-only D1 migration.
 - [ ] Implement D1-backed token storage, expiry tracking, revocation/disconnect and key rotation; apply migration to a private test DB.
@@ -160,10 +161,10 @@ Completion checklist:
 
 ## Immediate next work (ordered)
 
-1. Verify CI on current public branch; add lockfile + `npm ci`.
-2. Threat-model and choose MCP client authorization strategy.
-3. Establish Worker MCP transport with denied-by-default calls and mocked integration tests.
-4. Build Meta OAuth onboarding and D1 encrypted-token lifecycle.
+1. Register a private GitHub OAuth application for operator identity verification and configure Cloudflare secret bindings; no credential values in Git.
+2. Provision OAuth KV, service bindings and run real OAuth consent/PKCE/revocation tests in a controlled environment.
+3. Implement the D1 ciphertext storage adapter, disconnect and key rotation.
+4. Implement Meta OAuth onboarding and safe Graph API client with a documented permission matrix.
 5. Verify first authorised Facebook Page listing.
 
 **Non-goal:** relying on browser scraping or bypassing Meta restrictions to automate personal profiles or Groups.
