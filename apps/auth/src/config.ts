@@ -19,6 +19,9 @@ function safeUrl(raw: string, isResource: boolean): boolean {
     const secure = url.protocol === "https:" || (url.protocol === "http:" && loopback);
     if (!secure || url.username || url.password || url.search || url.hash) return false;
     return isResource ? url.pathname === "/mcp" : url.pathname === "/";
+  } catch {
+    return false;
+  }
 }
 
 export function githubCallbackUrl(issuer: string): string {
