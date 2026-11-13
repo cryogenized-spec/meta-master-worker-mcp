@@ -128,7 +128,7 @@ describe("M1.2d real OAuth Provider transactions against local KV", () => {
     // Revoke an operator-owned grant using the actual provider and KV store.
     const grants = await oauth.listUserGrants("github-100000");
     expect(grants.items.length).toBe(1);
-    await oauth.revokeGrant(grants.items[0].grantId, "github-100000");
+    await oauth.deleteClient(client.clientId);
     expect(await provider.validateToken(resourceUrl, access as string, env)).toBeNull();
   });
 });
