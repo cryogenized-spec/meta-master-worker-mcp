@@ -5,6 +5,7 @@ import makeWASocket, {
 import pino from "pino";
 import qrcode from "qrcode-terminal";
 import { assertSupportedHost } from "./runtime.js";
+import { EncryptedSpool } from "./spool.js";
 import { access, chmod, mkdir } from "node:fs/promises";
 import { homedir } from "node:os";
 import { join } from "node:path";
@@ -41,6 +42,34 @@ async function main(): Promise<void> {
     process.env.BAILEYS_BRIDGE_HMAC_KEY ?? "",
   );
   process.umask(0o077);
+  const spoolDirectory = process.env.BAILEYS_SPOOL_DIR ??
+    join(homedir(), ".local", "share", "meta-master-baileys-spool");
+  const spool = new EncryptedSpool(spoolDirectory, process.env.BAILEYS_SPOOL_KEY ?? "");
+  await spool.initialize();
+
+  // Persist to disk first. Observe-only HTTP deliveries are retried from
+  // the sealed local queue; nothing ever calls WhatsApp's sendMessage.
+  // Serialize writes and draining to avoid overlapping flush attempts.
+  let work = Promise.resolve();
+  function scheduleWork(action: () => Promise<void>): void {
+    work = work.then(action, action).catch(() => {
+      console.error("Encrypted local spool failed; review configuration and disk health.");
+    });
+  }
+  function drain(): void {
+    scheduleWork(async () => {
+      const result = await spool.flush(message => forwardObservedMessage(message, transport));
+      if (result.expired) {
+        console.error("Some queued messages are over one hour old; retained encrypted for manual review.");
+      }
+    });
+  }
+  // A short periodic drain provides retry after temporary network interruption,
+  // without relying on the WhatsApp socket to re-emit an event.
+  const retryTimer = setInterval(drain, 15_000);
+  retryTimer.unref();
+  drain();
+
   const session = process.env.BAILEYS_SESSION_DIR ??
     join(homedir(), ".local", "share", "meta-master-baileys");
   const allowPairing = process.env.BAILEYS_ALLOW_PAIRING === "true";
@@ -104,9 +133,12 @@ async function main(): Promise<void> {
       for (const raw of event.messages) {
         const message = normalizeBaileysMessage(raw, allowed);
         if (!message) continue; // ignore self, groups, statuses and other chats
-        void forwardObservedMessage(message, transport).catch(() => {
-          // No personal message content or JID is emitted to logs.
-          console.error("Signed inbox delivery failed; check local transport status.");
+        scheduleWork(async () => {
+          await spool.enqueue(message); // durable before attempting HTTP
+          const result = await spool.flush(item => forwardObservedMessage(item, transport));
+          if (result.deferred) {
+            console.error("Cloudflare unavailable; encrypted observation retained locally for retry.");
+          }
         });
       }
     });
