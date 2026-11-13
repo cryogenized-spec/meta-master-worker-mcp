@@ -125,6 +125,36 @@ export function normalizeBridgeEvents(
   return events;
 }
 
+/** Refuse oversized chunked requests before buffering the entire body. */
+async function readBoundedBody(request: Request): Promise<Uint8Array> {
+  if (!request.body) throw new Error("invalid_body");
+  const reader = request.body.getReader();
+  const parts: Uint8Array[] = [];
+  let total = 0;
+  try {
+    while (true) {
+      const value = await reader.read();
+      if (value.done) break;
+      total += value.value.byteLength;
+      if (total > LIMIT) {
+        await reader.cancel();
+        throw new Error("payload_too_large");
+      }
+      parts.push(value.value);
+    }
+  } finally {
+    reader.releaseLock();
+  }
+  if (total === 0) throw new Error("invalid_body");
+  const bytes = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of parts) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return bytes;
+}
+
 export async function handleBaileysIngress(
   request: Request,
   env: BaileysIngressEnv,
@@ -136,7 +166,9 @@ export async function handleBaileysIngress(
   const db = env.WHATSAPP_DB;
   if (env.BAILEYS_BRIDGE_INGRESS_ENABLED !== "true" ||
       !bridgeId || !/^[a-z0-9-]{3,64}$/.test(bridgeId) || !key ||
-      !db || !env.WHATSAPP_DATA_KEY || typeof db.prepare !== "function") {
+      !db || !env.WHATSAPP_DATA_KEY ||
+      env.WHATSAPP_DATA_KEY === env.BAILEYS_BRIDGE_HMAC_KEY ||
+      typeof db.prepare !== "function") {
     return reply(503, "Bridge not configured");
   }
 
@@ -155,11 +187,12 @@ export async function handleBaileysIngress(
   }
   let body: Uint8Array;
   try {
-    body = new Uint8Array(await request.arrayBuffer());
-  } catch {
-    return reply(400, "Invalid body");
+    body = await readBoundedBody(request);
+  } catch (error) {
+    return error instanceof Error && error.message === "payload_too_large"
+      ? reply(413, "Payload too large")
+      : reply(400, "Invalid body");
   }
-  if (body.byteLength === 0 || body.byteLength > LIMIT) return reply(413, "Payload too large");
 
   const expected = await computeBridgeMac(bridgeId, timestamp, nonce, body, key);
   const expectedBytes = new TextEncoder().encode("sha256=" + expected);
