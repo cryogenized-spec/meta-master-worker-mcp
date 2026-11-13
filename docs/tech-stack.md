@@ -14,12 +14,12 @@
 | CI | GitHub Actions, Node 24 | Node 24 verified; main CI uses npm ci | `.github/workflows/ci.yml` |
 | Protocol | MCP SDK v2 via conditional OAuthResourceServer; unconfigured `/mcp` 503 | Implemented staging | `src/mcp/` |
 
-A committed npm lockfile enables reproducible `npm ci` installs. See [M0 GitHub-hosted verification](m0-verification.md). MCP resource-server and separate OAuth issuer Worker code now bundle and pass unit tests. The auth Worker denies consent permanently until sign-in is implemented. AES-256-GCM encryption utilities and a D1 migration are present, but no D1/KV binding, live OAuth login, Meta API integration, R2, deployed endpoints or real Meta tools exist yet.
+A committed npm lockfile enables reproducible `npm ci` installs. See [M0 GitHub-hosted verification](m0-verification.md). MCP resource-server and separate OAuth issuer Worker code now bundle and pass unit tests. The auth Worker now includes browser-bound consent and GitHub OAuth PKCE operator verification, but no GitHub app or OAuth storage has been configured for live use. AES-256-GCM encryption utilities and a D1 migration are present, but no D1/KV binding, live OAuth login, Meta API integration, R2, deployed endpoints or real Meta tools exist yet.
 
 ## Selected for upcoming milestones
 
 - **MCP protocol:** MCP SDK v2.3.1, `agents` v0.31.0 stateless Streamable HTTP handler. The bundle is verified; live client interoperability remains untested.
-- **MCP client authorization:** Cloudflare Workers OAuth Provider v1.2.4 split architecture; resource half and fail-closed issuer Worker shell coded. Operator sign-in and consent still pending. Separate authorization of a ChatGPT/Claude client from authorization to use a Meta account.
+- **MCP client authorization:** Cloudflare Workers OAuth Provider v1.2.4 split architecture; resource half and fail-closed issuer Worker shell coded. Operator sign-in/consent flow implemented in source; live configuration and end-to-end tests pending. Separate authorization of a ChatGPT/Claude client from authorization to use a Meta account.
 - **Meta integration:** version-pinned Meta Graph API over native `fetch`, with granular permission checks. Account eligibility, endpoint permissions and API deprecations must be validated against current primary documentation.
 - **Database:** Cloudflare D1 for durable connection metadata, encrypted token payloads, pending approvals and audit events.
 - **Cryptography:** AES-256-GCM token envelope built on Workers Web Crypto, with per-operator/connection authenticated data. Encryption keys must be Cloudflare secrets; no key has been provisioned or stored in Git.

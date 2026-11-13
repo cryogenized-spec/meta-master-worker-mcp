@@ -2,7 +2,7 @@
 
 A modular, Cloudflare-native Model Context Protocol server for authorised Meta business and social-platform workflows.
 
-> **Status: M1.2a — separate OAuth issuer Worker and token-vault groundwork built; no live sign-in, consent or Meta connection.** No Meta account connection, OAuth flow, publishing, messaging or advertising features are implemented. The `/mcp` endpoint is still unavailable by default; the authenticated handler only activates with a configured OAuth authorization service binding.
+> **Status: M1.2b — GitHub operator sign-in and browser-bound MCP client consent code built; live OAuth setup and Meta connection still pending.** No Meta account connection, OAuth flow, publishing, messaging or advertising features are implemented. The `/mcp` endpoint is still unavailable by default; the authenticated handler only activates with a configured OAuth authorization service binding.
 
 ## Goals
 
@@ -34,6 +34,7 @@ Local endpoints: `GET /health` reports M1 staging; `/mcp` returns HTTP 503 until
 - [M1 verified CI run](docs/m1-validation.md)
 - [M1.2a authorisation Worker and token-vault groundwork](docs/m1-2a.md)
 - [M1.2a CI verification](docs/m1-2a-validation.md)
+- [M1.2b GitHub operator login, read-only consent and pending deployment gates](docs/m1-2b.md)
 - [Threat model](docs/threat-model.md)
 - [Verified and planned technology stack](docs/tech-stack.md)
 - [Architecture](docs/architecture.md)

@@ -6,6 +6,7 @@ const kv = {
   get: async () => null,
   put: async () => undefined,
   delete: async () => undefined,
+  list: async () => ({ keys: [], list_complete: true }),
 } as unknown as KVNamespace;
 
 const ready = (): AuthEnv => ({
@@ -13,6 +14,9 @@ const ready = (): AuthEnv => ({
   ISSUER: "https://auth.example.org/",
   MCP_SERVER_URL: "https://mcp.example.org/mcp",
   OAUTH_KV: kv,
+  GITHUB_CLIENT_ID: "Ov23liExample123456",
+  GITHUB_CLIENT_SECRET: "fixture-no-real-oauth-secret-000000",
+  OPERATOR_GITHUB_USER_ID: "123456789",
 });
 
 describe("M1.2 split authorization Worker setup", () => {
@@ -20,6 +24,8 @@ describe("M1.2 split authorization Worker setup", () => {
     expect(isAuthProviderConfigured({})).toBe(false);
     expect(isAuthProviderConfigured({ ...ready(), AUTH_ENABLED: "false" })).toBe(false);
     expect(isAuthProviderConfigured({ ...ready(), OAUTH_KV: undefined })).toBe(false);
+    expect(isAuthProviderConfigured({ ...ready(), GITHUB_CLIENT_SECRET: undefined })).toBe(false);
+    expect(isAuthProviderConfigured({ ...ready(), OPERATOR_GITHUB_USER_ID: "not-a-github-id" })).toBe(false);
     expect(isAuthProviderConfigured(ready())).toBe(true);
   });
 
