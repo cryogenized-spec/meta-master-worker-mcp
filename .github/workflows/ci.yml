@@ -29,9 +29,24 @@ jobs:
         run: npm run build
       - name: Validate WhatsApp staging Worker template without deployment
         run: npx --no-install wrangler deploy -c wrangler.whatsapp.example.jsonc --dry-run --outdir dist-whatsapp
-      - name: Validate local secret generator syntax
-        run: bash -n scripts/generate-whatsapp-staging-secrets.sh
+      - name: Validate private staging secret generation
+        run: |
+          bash -n scripts/generate-whatsapp-staging-secrets.sh
+          bash scripts/generate-whatsapp-staging-secrets.sh
+          test "$(stat -c '%a' .private/whatsapp-staging.env)" = '600'
+          if bash scripts/generate-whatsapp-staging-secrets.sh; then
+            echo "Unexpected private secret overwrite!"
+            exit 1
+          fi
       - name: Install isolated Baileys observer dependencies
         run: npm ci --prefix apps/baileys-bridge --no-audit --no-fund
       - name: Compile and test observation-only Baileys bridge
         run: npm test --prefix apps/baileys-bridge
+      - name: Verify synthetic ingress command is disabled by default
+        run: npm run smoke --prefix apps/baileys-bridge
+      - name: Build portable future Baileys container image (no pairing)
+        run: docker build -f apps/baileys-bridge/Dockerfile -t baileys-bridge-ci apps/baileys-bridge
+      - name: Verify future container cannot connect by default
+        run: |
+          result="$(docker run --rm baileys-bridge-ci)"
+          test "$result" = 'Baileys bridge disabled (default). No connection attempted.'
