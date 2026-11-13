@@ -117,7 +117,7 @@ describe("M1.2d real OAuth Provider transactions against local KV", () => {
         headers: { "content-type": "application/x-www-form-urlencoded" },
         body: tokenBody.toString(),
       },
-    ), env, { waitUntil() {}, passThroughOnException() {} } as ExecutionContext);
+    ), env, { waitUntil() {}, passThroughOnException() {} } as unknown as ExecutionContext);
 
     expect(tokenResponse.status).toBe(200);
     const result: unknown = await tokenResponse.json();
@@ -135,7 +135,7 @@ describe("M1.2d real OAuth Provider transactions against local KV", () => {
       method: "POST",
       headers: { "content-type": "application/x-www-form-urlencoded" },
       body: tokenBody.toString(),
-    }), env, { waitUntil() {}, passThroughOnException() {} } as ExecutionContext);
+    }), env, { waitUntil() {}, passThroughOnException() {} } as unknown as ExecutionContext);
     expect(second.status).toBe(400);
   });
 });
