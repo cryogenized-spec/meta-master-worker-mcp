@@ -1,0 +1,42 @@
+name: Build WhatsApp staging preview for Cloudflare review
+
+on:
+  push:
+    branches:
+      - feat/whatsapp-free-tier-gateway-deploy
+    paths:
+      - '.github/workflows/whatsapp-preview-bundle.yml'
+      - 'src/**'
+      - 'wrangler.whatsapp.example.jsonc'
+
+permissions:
+  contents: write
+
+jobs:
+  bundle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Bundle exactly the dedicated WhatsApp free-tier entrypoint
+        run: |
+          npx --no-install wrangler deploy -c wrangler.whatsapp.example.jsonc --dry-run --outdir .release-whatsapp
+          find .release-whatsapp -maxdepth 1 -type f -name '*.js' -print
+          bundle="$(find .release-whatsapp -maxdepth 1 -type f -name '*.js' | sort | head -1)"
+          test -n "$bundle"
+          mkdir -p deployment-preview
+          cp "$bundle" deployment-preview/whatsapp-staging.worker.mjs
+          test "$(wc -c < deployment-preview/whatsapp-staging.worker.mjs)" -gt 1000
+          ! grep -q 'BAILEYS_BRIDGE_HMAC_KEY=' deployment-preview/whatsapp-staging.worker.mjs
+      - name: Store the preview bundle on this isolated PR branch only
+        run: |
+          git add -f deployment-preview/whatsapp-staging.worker.mjs
+          if ! git diff --cached --quiet; then
+            git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'build(whatsapp): reproducible staging preview Worker bundle'
+            git push origin HEAD:feat/whatsapp-free-tier-gateway-deploy
+          fi
