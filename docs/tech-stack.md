@@ -20,7 +20,7 @@ A committed npm lockfile enables reproducible `npm ci` installs. See [M0 GitHub-
 
 - **MCP protocol:** MCP SDK v2.3.1, `agents` v0.31.0 stateless Streamable HTTP handler. The bundle is verified; live client interoperability remains untested.
 - **MCP client authorization:** Cloudflare Workers OAuth Provider v1.2.4 split architecture; resource half and fail-closed issuer Worker shell coded. Operator sign-in/consent flow implemented in source; live configuration and end-to-end tests pending. Separate authorization of a ChatGPT/Claude client from authorization to use a Meta account.
-- **Meta integration:** version-pinned Meta Graph API over native `fetch`, with granular permission checks. Account eligibility, endpoint permissions and API deprecations must be validated against current primary documentation.
+- **Meta integration:** fixed-host native fetch Graph API client pinned at v27.0, supporting only read-only Page discovery. It has permission and operator checks, but Meta account eligibility, API access and Page tasks are not yet tested live.
 - **Database:** Cloudflare D1 for encrypted provider token storage and audit events: schema and internal adapter are implemented, but not provisioned. Pending approvals require a later schema/transaction design.
 - **Cryptography:** AES-256-GCM token envelope built on Workers Web Crypto, with per-operator/connection authenticated data. Encryption keys must be Cloudflare secrets; no key has been provisioned or stored in Git.
 - **Validation:** Zod 4 installed; schema and input constraints to be introduced with real tools.
