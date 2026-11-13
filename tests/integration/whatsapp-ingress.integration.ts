@@ -20,7 +20,7 @@ const record = (kind: "text" | "unsupported"): InboundWhatsAppMessage => ({
   phoneNumberId: number,
   timestamp: 1794560000,
   type: kind,
-  text: kind === "text" ? "Sensitive fixture: please call me on 083 000 0000" : null,
+  text: kind === "text" ? "Sensitive fixture: reference number 083 000 0000" : null,
 });
 
 beforeAll(async () => {
