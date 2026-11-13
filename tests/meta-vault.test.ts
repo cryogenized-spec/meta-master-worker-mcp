@@ -88,7 +88,7 @@ describe("M1.2c encrypted connection vault", () => {
     expect(db.called[0].sql).toContain("operator_id = ?");
     await expect(vault.readToken("github:different", input.connectionId))
       .rejects.toThrow("token_decryption_failed");
-    expect(await vault.readToken(input.operatorId, input.connectionId, input.expiresAt)).toBeNull();
+    expect(await vault.readToken(input.operatorId, input.connectionId, input.expiresAt!)).toBeNull();
   });
 
   it("lists metadata but never retrieves token_ciphertext", async () => {
