@@ -1,15 +1,7 @@
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { Miniflare } from "miniflare";
-import { readFile } from "node:fs/promises";
+import { beforeAll, describe, expect, it } from "vitest";
+import { env } from "cloudflare:workers";
+import migrationSql from "../../migrations/0001_meta_connections.sql?raw";
 import { MetaConnectionVault } from "../../src/storage/meta-vault";
-
-const miniflare = new Miniflare({
-  modules: true,
-  script: 'export default { fetch() { return new Response("local integration only") } }',
-  compatibilityDate: "2026-11-12",
-  d1Databases: { META_DB: "00000000-0000-4000-8000-000000000001" },
-  kvNamespaces: ["OAUTH_KV"],
-});
 
 let db: D1Database;
 let vault: MetaConnectionVault;
@@ -18,15 +10,11 @@ const key = btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(32
   .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
 
 beforeAll(async () => {
-  db = await miniflare.getD1Database("META_DB") as D1Database;
-  kv = await miniflare.getKVNamespace("OAUTH_KV") as KVNamespace;
-  const sql = await readFile(new URL("../../migrations/0001_meta_connections.sql", import.meta.url), "utf8");
-  await db.exec(sql);
+  const bindings = env as unknown as { META_DB: D1Database; OAUTH_KV: KVNamespace };
+  db = bindings.META_DB;
+  kv = bindings.OAUTH_KV;
+  await db.exec(migrationSql);
   vault = new MetaConnectionVault({ META_DB: db, META_TOKEN_ENCRYPTION_KEY: key });
-});
-
-afterAll(async () => {
-  await miniflare.dispose();
 });
 
 describe("M1.2d real workerd-backed D1 and KV integration", () => {
