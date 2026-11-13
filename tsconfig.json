@@ -11,7 +11,8 @@
     "noEmit": true,
     "skipLibCheck": true,
     "types": [
-      "@cloudflare/workers-types"
+      "@cloudflare/workers-types",
+      "node"
     ],
     "isolatedModules": true,
     "verbatimModuleSyntax": true
@@ -19,6 +20,7 @@
   "include": [
     "src/**/*.ts",
     "apps/auth/src/**/*.ts",
-    "tests/**/*.ts"
+    "tests/**/*.ts",
+    "tests/integration/**/*.ts"
   ]
 }
