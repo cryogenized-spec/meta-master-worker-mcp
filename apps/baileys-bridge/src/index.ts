@@ -4,6 +4,7 @@ import makeWASocket, {
 } from "@whiskeysockets/baileys";
 import pino from "pino";
 import qrcode from "qrcode-terminal";
+import { assertSupportedHost } from "./runtime.js";
 import { access, chmod, mkdir } from "node:fs/promises";
 import { homedir } from "node:os";
 import { join } from "node:path";
@@ -23,6 +24,8 @@ async function main(): Promise<void> {
     console.info("Baileys bridge disabled (default). No connection attempted.");
     return;
   }
+
+  assertSupportedHost(process.env);
 
   const allowed = new Set(
     (process.env.BAILEYS_ALLOWED_JIDS ?? "").split(",").map(v => v.trim()).filter(Boolean),
