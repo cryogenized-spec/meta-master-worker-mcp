@@ -54,13 +54,13 @@ With the default environment, `npm start` reports **disabled** and never attempt
 
 The Worker needs **independently configured, private** `BAILEYS_BRIDGE_INGRESS_ENABLED=true`, `BAILEYS_BRIDGE_ID`, `BAILEYS_BRIDGE_HMAC_KEY`, `WHATSAPP_DB` and `WHATSAPP_DATA_KEY`. The bridge HMAC key and data-encryption key must be different random 32-byte values. No value or actual account number belongs in GitHub issues, code, logs or CI.
 
-**No Cloudflare resources or secrets have been provisioned.** Do not try to use an example URL; there is no public Worker endpoint yet.
+**Current staging status:** a separate Cloudflare D1 database and a dedicated Worker were created on the existing free plan. Its public route was left disabled until the private keys can be configured and verified. Do not assume a live receiving endpoint exists, and do not try to use an example URL.
 
 ## Pairing/session details
 
 Baileys stores long-lived Signal session keys. This prototype uses its built-in `useMultiFileAuthState` for **local development only** because the project maintainers discourage it for production. The default session directory is `~/.local/share/meta-master-baileys`; process file-creation mask is restricted and the directory is chmod 0700. Treat these credentials like private SSH keys. The linked-device QR code is displayed only when the operator explicitly enables pairing.
 
-A future production-grade bridge will need a robust encrypted auth-state store, a local durable outgoing-event spool, crash recovery, reconciliation after network interruption, user-controlled disconnect/pause, and privacy/retention controls. The current observer has a bounded reconnect policy but **does not guarantee at-least-once message delivery** if the local-to-Cloudflare hop fails. Do not use for customer service before those are implemented.
+The local observer now has a durable encrypted inbound event spool and bounded retries, but a future production-grade bridge still requires a reviewed Signal auth-state store, reconciliation after long outages, authorised reply handling, privacy/retention controls and full real-device tests. At-least-once delivery is **not guaranteed** across a complete system crash or messages older than the one-hour ingress window.
 
 ## Why no unrestricted automation
 
@@ -88,3 +88,42 @@ The spool requires a THIRD independent 32-byte random secret, `BAILEYS_SPOOL_KEY
 The default spool directory is `~/.local/share/meta-master-baileys-spool`. Only explicitly allowlisted chats enter the spool, and WhatsApp pairing continues to require independent opt-in. This local spool deliberately remains off-container until a reviewed Cloudflare session/auth storage adapter is available.
 
 The current queue needs further hardening before any high-volume or business-critical deployment: single-process locking, manual stale-entry quarantine UI, race-free concurrent deduplication across processes, and privacy retention/erasure. It is a safety improvement for the local prototype, **not** a guarantee of zero lost events.
+
+
+## HP OMEN offline operator checks (W0h)
+
+After updating the repository, test the runtime and run the new offline diagnostics. These commands do not pair WhatsApp or send a WhatsApp message; `npm ci` may contact the npm registry to install dependencies:
+
+```bash
+cd ~/meta-master-worker-mcp
+git pull --ff-only
+cd apps/baileys-bridge
+npm ci
+npm test
+npm run doctor
+npm run selftest
+```
+
+Node does **not** automatically load local environment files. If you have a private `.env.local` already in this folder, run the doctor with it explicitly:
+
+```bash
+node --env-file=.env.local dist/doctor.js
+```
+
+The doctor reports whether the bridge is enabled, whether pairing is permitted, the *number* of allowlisted individual chats (never their numbers), whether the HMAC endpoint and local AES key are configured, whether a paired session exists, lock status, and aggregate encrypted spool counts (pending / stale / damaged). It does **not** print any messages, chat identifiers or secret key values, and makes no network requests.
+
+Baileys now acquires an exclusive local lock inside the Signal session directory before opening a socket. A second process using that directory fails rather than corrupting credentials. SIGINT/SIGTERM stops the retry timer, waits for pending observation and credentials writes, and releases the lock. If the host crashes without a graceful shutdown, the lock may stay on disk. This is an intentional fail-closed behaviour.
+
+If the offline doctor reports `session_lock: "stale"`, first check that no Baileys process is active, and then explicitly recover the stale lock:
+
+```bash
+node --env-file=.env.local dist/doctor.js --clear-stale-lock --confirm-session-not-running
+```
+
+Recovery refuses an active or unknown lock. Do **not** delete session credentials to solve a lock warning.
+
+Encrypted spool writes now use an atomic link rather than a replaceable rename: a concurrent enqueue cannot overwrite an already-existing queued event. A read-only inspection detects stale/damaged queue entries without decrypting or displaying their content. Damaged records are retained; recovery and retention/erasure tools remain future work.
+
+**Limitations:** This is still a local development observer, not an AI replying to customers. There are no automatic replies, no text-generation service, no WhatsApp send function and no pairing without the operator explicitly enabling it. Baileys is unofficial and may lead to account restrictions; evaluate with a non-essential test account first.
+
+The `npm run selftest` command is an entirely offline, synthetic end-to-end rehearsal. It filters a fabricated allowlisted message, saves it in a temporary AES-GCM-encrypted queue, deliberately simulates an HTTP 503 failure, verifies that the message is retained, and then simulates HTTP 200 delivery while independently checking the HMAC signature. The temporary queue is removed and neither WhatsApp nor Cloudflare is contacted.

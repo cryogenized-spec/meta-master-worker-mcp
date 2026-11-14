@@ -49,6 +49,10 @@ jobs:
         run: npm ci --prefix apps/baileys-bridge --no-audit --no-fund
       - name: Compile and test observation-only Baileys bridge
         run: npm test --prefix apps/baileys-bridge
+      - name: Verify offline Baileys operator commands
+        run: |
+          npm run doctor --prefix apps/baileys-bridge
+          npm run selftest --prefix apps/baileys-bridge
       - name: Verify synthetic ingress command is disabled by default
         run: npm run smoke --prefix apps/baileys-bridge
       - name: Build portable future Baileys container image (no pairing)
