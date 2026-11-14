@@ -1,5 +1,5 @@
 import { createCipheriv, createDecipheriv, createHmac, randomBytes } from "node:crypto";
-import { mkdir, open, readdir, readFile, rename, stat, unlink } from "node:fs/promises";
+import { link, mkdir, open, readdir, readFile, stat, unlink } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import type { NormalizedBridgeMessage } from "./transport.js";
 
@@ -153,17 +153,26 @@ export class EncryptedSpool {
     }
     await handle.close();
 
-    // No confidential plaintext in file name. Rename within same filesystem.
+    // Hard-linking publishes the fsynced record atomically without replacing
+    // an existing pending record, even if two processes race to enqueue it.
+    // The private temp file stays on the same filesystem as the final file.
+    let added = false;
     try {
-      await rename(temporary, path);
-      // Best effort sync directory metadata; some file systems don't support it.
-      const parent = await open(dirname(path), "r");
-      try { await parent.sync(); } finally { await parent.close(); }
-    } catch (error) {
+      try {
+        await link(temporary, path);
+        added = true;
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
+      }
+      // Best effort sync directory metadata; some filesystems don't support it.
+      if (added) {
+        const parent = await open(dirname(path), "r");
+        try { await parent.sync(); } finally { await parent.close(); }
+      }
+    } finally {
       await unlink(temporary).catch(() => {});
-      throw error;
     }
-    return true;
+    return added;
   }
 
   async read(id: string): Promise<SpoolItem> {
@@ -172,6 +181,25 @@ export class EncryptedSpool {
 
   async count(): Promise<number> {
     return (await this.files()).length;
+  }
+
+  /** Read-only inspection for the operator; never prints or returns message content. */
+  async inspect(nowSeconds = Math.floor(Date.now() / 1000)): Promise<{
+    pending: number; expired: number; damaged: number;
+  }> {
+    const filenames = await this.files();
+    let expired = 0;
+    let damaged = 0;
+    for (const filename of filenames) {
+      const id = filename.slice(0, -FILE_SUFFIX.length);
+      try {
+        const item = await this.read(id);
+        if (nowSeconds - item.message.timestamp > MAX_AGE_FOR_INGRESS_SECONDS) expired++;
+      } catch {
+        damaged++;
+      }
+    }
+    return { pending: filenames.length, expired, damaged };
   }
 
   async flush(
