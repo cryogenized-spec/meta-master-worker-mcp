@@ -127,3 +127,23 @@ Encrypted spool writes now use an atomic link rather than a replaceable rename: 
 **Limitations:** This is still a local development observer, not an AI replying to customers. There are no automatic replies, no text-generation service, no WhatsApp send function and no pairing without the operator explicitly enabling it. Baileys is unofficial and may lead to account restrictions; evaluate with a non-essential test account first.
 
 The `npm run selftest` command is an entirely offline, synthetic end-to-end rehearsal. It filters a fabricated allowlisted message, saves it in a temporary AES-GCM-encrypted queue, deliberately simulates an HTTP 503 failure, verifies that the message is retained, and then simulates HTTP 200 delivery while independently checking the HMAC signature. The temporary queue is removed and neither WhatsApp nor Cloudflare is contacted.
+
+## Signed replay acceptance — synthetic only
+
+After the HP OMEN has successfully sent the first synthetic live event and the staging Worker has its own private keys configured, run a dedicated idempotency test:
+
+```sh
+cd ~/meta-master-worker-mcp
+git pull --ff-only
+cd apps/baileys-bridge
+npm ci
+npm test
+# Safe default: makes no network requests.
+npm run replay-smoke
+# Explicitly opt into three HTTPS requests containing only fabricated test data:
+BAILEYS_REPLAY_SMOKE_SEND=true node --env-file=.env.local dist/replay-smoke.js
+```
+
+The opt-in command requires the **exact** `meta-master-whatsapp-gateway-staging.cryogenized.workers.dev` HTTPS hostname and private bridge credentials already stored locally. It creates one fake message with a random message ID, posts a correctly signed envelope, replays **identical raw bytes and nonce**, then re-signs a **different synthetic body using the same nonce**. The expected HTTP statuses are **200, 200, 409**, respectively. Only one new event should appear in encrypted D1 despite three requests. A mismatch fails the command. Nothing touches WhatsApp, contacts, real messages or the agent's OFF mode. Do not paste private keys or `.env.local` into tickets or chat.
+
+This acceptance check is distinct from the Node unit tests: it exercises live Cloudflare's replay receipt transaction and idempotence. It intentionally does not enable WhatsApp pairing.
