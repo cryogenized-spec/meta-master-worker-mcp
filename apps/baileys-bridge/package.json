@@ -12,7 +12,8 @@
     "test": "npm run build && node --test dist/*.test.js",
     "start": "node dist/index.js",
     "smoke": "node dist/smoke.js",
-    "doctor": "node dist/doctor.js"
+    "doctor": "node dist/doctor.js",
+    "selftest": "node dist/selftest.js"
   },
   "dependencies": {
     "@whiskeysockets/baileys": "7.0.0-rc14",
