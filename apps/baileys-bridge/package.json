@@ -13,7 +13,8 @@
     "start": "node dist/index.js",
     "smoke": "node dist/smoke.js",
     "doctor": "node dist/doctor.js",
-    "selftest": "node dist/selftest.js"
+    "selftest": "node dist/selftest.js",
+    "replay-smoke": "node dist/replay-smoke.js"
   },
   "dependencies": {
     "@whiskeysockets/baileys": "7.0.0-rc14",

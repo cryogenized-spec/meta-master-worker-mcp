@@ -53,6 +53,8 @@ jobs:
         run: |
           npm run doctor --prefix apps/baileys-bridge
           npm run selftest --prefix apps/baileys-bridge
+      - name: Verify live replay acceptance command defaults to disabled
+        run: npm run replay-smoke --prefix apps/baileys-bridge
       - name: Verify synthetic ingress command is disabled by default
         run: npm run smoke --prefix apps/baileys-bridge
       - name: Build portable future Baileys container image (no pairing)
