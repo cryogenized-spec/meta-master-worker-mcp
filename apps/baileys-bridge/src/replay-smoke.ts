@@ -1,4 +1,4 @@
-import { createHmac, randomBytes, randomUUID } from "node:crypto";
+import { randomBytes, randomUUID } from "node:crypto";
 import {
   signBridgeEvent, validateTransport,
   type NormalizedBridgeMessage, type TransportSettings,
