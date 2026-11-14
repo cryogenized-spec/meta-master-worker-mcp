@@ -92,7 +92,7 @@ The current queue needs further hardening before any high-volume or business-cri
 
 ## HP OMEN offline operator checks (W0h)
 
-After updating the repository, test the runtime and run the new offline diagnostics. No command here pairs WhatsApp, makes an outbound network request or sends a message:
+After updating the repository, test the runtime and run the new offline diagnostics. These commands do not pair WhatsApp or send a WhatsApp message; `npm ci` may contact the npm registry to install dependencies:
 
 ```bash
 cd ~/meta-master-worker-mcp
@@ -101,6 +101,7 @@ cd apps/baileys-bridge
 npm ci
 npm test
 npm run doctor
+npm run selftest
 ```
 
 Node does **not** automatically load local environment files. If you have a private `.env.local` already in this folder, run the doctor with it explicitly:
@@ -124,3 +125,5 @@ Recovery refuses an active or unknown lock. Do **not** delete session credential
 Encrypted spool writes now use an atomic link rather than a replaceable rename: a concurrent enqueue cannot overwrite an already-existing queued event. A read-only inspection detects stale/damaged queue entries without decrypting or displaying their content. Damaged records are retained; recovery and retention/erasure tools remain future work.
 
 **Limitations:** This is still a local development observer, not an AI replying to customers. There are no automatic replies, no text-generation service, no WhatsApp send function and no pairing without the operator explicitly enabling it. Baileys is unofficial and may lead to account restrictions; evaluate with a non-essential test account first.
+
+The `npm run selftest` command is an entirely offline, synthetic end-to-end rehearsal. It filters a fabricated allowlisted message, saves it in a temporary AES-GCM-encrypted queue, deliberately simulates an HTTP 503 failure, verifies that the message is retained, and then simulates HTTP 200 delivery while independently checking the HMAC signature. The temporary queue is removed and neither WhatsApp nor Cloudflare is contacted.
