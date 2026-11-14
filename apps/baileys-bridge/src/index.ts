@@ -6,6 +6,7 @@ import pino from "pino";
 import qrcode from "qrcode-terminal";
 import { assertSupportedHost } from "./runtime.js";
 import { EncryptedSpool } from "./spool.js";
+import { acquireSessionLock } from "./session-lock.js";
 import { access, chmod, mkdir } from "node:fs/promises";
 import { homedir } from "node:os";
 import { join } from "node:path";
@@ -16,9 +17,8 @@ import {
 } from "./transport.js";
 
 /**
- * Prototype. NEVER connects by default, NEVER calls sock.sendMessage(),
- * and NEVER forwards chats outside BAILEYS_ALLOWED_JIDS.
- * The sole output is an authenticated encrypted-inbox ingest request.
+ * Local, opt-in, observation-only WhatsApp connector.
+ * No outbound WhatsApp send call or AI processing exists in this process.
  */
 async function main(): Promise<void> {
   if (process.env.BAILEYS_ENABLE !== "true") {
@@ -27,7 +27,6 @@ async function main(): Promise<void> {
   }
 
   assertSupportedHost(process.env);
-
   const allowed = new Set(
     (process.env.BAILEYS_ALLOWED_JIDS ?? "").split(",").map(v => v.trim()).filter(Boolean),
   );
@@ -35,40 +34,19 @@ async function main(): Promise<void> {
       [...allowed].some(jid => !/^[0-9]{4,25}@(s\.whatsapp\.net|lid)$/.test(jid))) {
     throw new Error("BAILEYS_ALLOWED_JIDS must list explicit individual chat IDs");
   }
-
   const transport = validateTransport(
     process.env.BAILEYS_BRIDGE_URL ?? "",
     process.env.BAILEYS_BRIDGE_ID ?? "",
     process.env.BAILEYS_BRIDGE_HMAC_KEY ?? "",
   );
+  if (process.env.BAILEYS_BRIDGE_HMAC_KEY === process.env.BAILEYS_SPOOL_KEY) {
+    throw new Error("bridge_and_spool_keys_must_be_distinct");
+  }
   process.umask(0o077);
   const spoolDirectory = process.env.BAILEYS_SPOOL_DIR ??
     join(homedir(), ".local", "share", "meta-master-baileys-spool");
   const spool = new EncryptedSpool(spoolDirectory, process.env.BAILEYS_SPOOL_KEY ?? "");
   await spool.initialize();
-
-  // Persist to disk first. Observe-only HTTP deliveries are retried from
-  // the sealed local queue; nothing ever calls WhatsApp's sendMessage.
-  // Serialize writes and draining to avoid overlapping flush attempts.
-  let work = Promise.resolve();
-  function scheduleWork(action: () => Promise<void>): void {
-    work = work.then(action, action).catch(() => {
-      console.error("Encrypted local spool failed; review configuration and disk health.");
-    });
-  }
-  function drain(): void {
-    scheduleWork(async () => {
-      const result = await spool.flush(message => forwardObservedMessage(message, transport));
-      if (result.expired) {
-        console.error("Some queued messages are over one hour old; retained encrypted for manual review.");
-      }
-    });
-  }
-  // A short periodic drain provides retry after temporary network interruption,
-  // without relying on the WhatsApp socket to re-emit an event.
-  const retryTimer = setInterval(drain, 15_000);
-  retryTimer.unref();
-  drain();
 
   const session = process.env.BAILEYS_SESSION_DIR ??
     join(homedir(), ".local", "share", "meta-master-baileys");
@@ -83,71 +61,154 @@ async function main(): Promise<void> {
   await mkdir(session, { recursive: true, mode: 0o700 });
   await chmod(session, 0o700);
 
-  async function connect(attempt = 0): Promise<void> {
+  // Lock the Signal auth folder, not the event spool, to prevent simultaneous
+  // sockets from using the same WhatsApp credentials even with different queues.
+  const lock = await acquireSessionLock(session);
+  let stopping = false;
+  let generation = 0;
+  let socket: ReturnType<typeof makeWASocket> | undefined;
+  let reconnectTimer: NodeJS.Timeout | undefined;
+  let retryTimer: NodeJS.Timeout | undefined;
+  let work: Promise<void> = Promise.resolve();
+  let credentialWrites: Promise<void> = Promise.resolve();
+
+  function scheduleWork(action: () => Promise<void>): void {
+    if (stopping) return;
+    work = work.then(action, action).catch(() => {
+      console.error("Encrypted local spool failure. Run the offline doctor and check disk health.");
+    });
+  }
+
+  function drain(): void {
+    scheduleWork(async () => {
+      const result = await spool.flush(message => forwardObservedMessage(message, transport));
+      if (result.expired) {
+        console.error("Encrypted pending events are too old for the gateway; manual review required.");
+      }
+      if (result.pending >= 1000) {
+        console.error("Encrypted event queue is full; no additional events can be accepted.");
+      }
+    });
+  }
+
+  async function shutdown(exitCode = 0): Promise<void> {
+    if (stopping) return;
+    stopping = true;
+    generation++;
+    if (retryTimer) clearInterval(retryTimer);
+    if (reconnectTimer) clearTimeout(reconnectTimer);
+    try { socket?.end(new Error("Local bridge stopping")); } catch { /* Already closed. */ }
+    await Promise.allSettled([work, credentialWrites]);
+    try {
+      await lock.release();
+    } catch {
+      console.error("Could not release session lock safely. Inspect the offline doctor.");
+      exitCode = 1;
+    }
+    process.exit(exitCode);
+  }
+
+  process.once("SIGINT", () => { void shutdown(); });
+  process.once("SIGTERM", () => { void shutdown(); });
+
+  async function connect(attempt: number): Promise<void> {
+    if (stopping) return;
+    const currentGeneration = ++generation;
     const { state, saveCreds } = await useMultiFileAuthState(session);
+    if (stopping || currentGeneration !== generation) return;
     const sock = makeWASocket({
       auth: state,
       logger: pino({ level: "silent" }),
     });
+    socket = sock;
+    let disconnected = false;
+    const current = () => !stopping && !disconnected &&
+      currentGeneration === generation;
 
     sock.ev.on("creds.update", () => {
-      void saveCreds().catch(() => console.error("Could not persist session credentials."));
+      if (!current()) return;
+      // Auth writes must not race each other or a graceful shutdown.
+      credentialWrites = credentialWrites.then(saveCreds).catch(() => {
+        console.error("Could not persist WhatsApp session credentials; stopping.");
+        void shutdown(1);
+      });
     });
-
     sock.ev.on("connection.update", update => {
+      if (!current()) return;
       if (update.qr) {
         if (allowPairing) {
-          // Display only on the local terminal, never forward or log the QR.
+          // Display only on this local terminal, never forward or log the QR.
           qrcode.generate(update.qr, { small: true });
         } else {
-          console.error("A new pairing request was rejected by local configuration.");
+          console.error("Unexpected pairing request refused by local configuration.");
+          void shutdown(1);
+          return;
         }
       }
       if (update.connection === "open") {
+        attempt = 0; // Reset reconnect budget only after an actual connection.
         console.info("Baileys linked; observation-only mode, allowlisted chats.");
       }
       if (update.connection === "close") {
+        disconnected = true;
         const reason = (update.lastDisconnect?.error as {
           output?: { statusCode?: number };
         } | undefined)?.output?.statusCode;
         if (reason === DisconnectReason.loggedOut) {
-          console.error("Linked device was logged out. No automatic re-pairing.");
+          console.error("Linked device logged out. Will not automatically re-pair.");
+          void shutdown(1);
           return;
         }
-        if (attempt >= 5) {
-          console.error("Reconnect limit reached; stopping instead of looping.");
+        const nextAttempt = attempt + 1;
+        if (nextAttempt > 5) {
+          console.error("Reconnect limit reached; stop instead of looping forever.");
+          void shutdown(1);
           return;
         }
-        // Bounded backoff, never log transport exceptions or message content.
-        const delay = Math.min(30_000, 2_000 * 2 ** attempt);
-        setTimeout(() => {
-          void connect(attempt + 1).catch(() => {
-            console.error("Baileys could not reconnect.");
-          });
-        }, delay);
+        scheduleReconnect(nextAttempt);
       }
     });
-
     sock.ev.on("messages.upsert", event => {
-      if (event.type !== "notify") return; // no history backfill
+      if (!current() || event.type !== "notify") return; // No history backfill.
       for (const raw of event.messages) {
         const message = normalizeBaileysMessage(raw, allowed);
-        if (!message) continue; // ignore self, groups, statuses and other chats
+        if (!message) continue; // No own messages, unknown chats, groups or statuses.
         scheduleWork(async () => {
-          await spool.enqueue(message); // durable before attempting HTTP
+          await spool.enqueue(message); // Fsync encrypted event before HTTP.
           const result = await spool.flush(item => forwardObservedMessage(item, transport));
           if (result.deferred) {
-            console.error("Cloudflare unavailable; encrypted observation retained locally for retry.");
+            console.error("Cloudflare unavailable; encrypted events retained for retry.");
           }
         });
       }
     });
   }
 
-  await connect();
+  function scheduleReconnect(attempt: number): void {
+    if (stopping || reconnectTimer) return;
+    const delay = Math.min(30_000, 2000 * 2 ** (attempt - 1));
+    reconnectTimer = setTimeout(() => {
+      reconnectTimer = undefined;
+      void connect(attempt).catch(() => {
+        console.error("Baileys connection failed; retrying within bounded limit.");
+        if (attempt >= 5) void shutdown(1);
+        else scheduleReconnect(attempt + 1);
+      });
+    }, delay);
+  }
+
+  retryTimer = setInterval(drain, 15_000);
+  retryTimer.unref();
+  drain();
+  try {
+    await connect(0);
+  } catch {
+    console.error("Initial connection could not be established.");
+    await shutdown(1);
+  }
 }
 
 void main().catch(() => {
-  console.error("Baileys bridge did not start. Verify the private configuration.");
+  console.error("Baileys bridge did not start. Verify private configuration or run the offline doctor.");
   process.exitCode = 1;
 });
